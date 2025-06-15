@@ -149,6 +149,23 @@ class OrderCard extends StatelessWidget {
   final Map order;
 
   OrderCard({required this.order, required this.onTap});
+  
+  void cancelOrderHandler(BuildContext context, String orderId) async {
+  final orderService = OrderService();
+  final result = await orderService.cancelOrder(orderId);
+
+  if (result?['success'] == true) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Order Cancelled: ${result?['message']}')),
+    );
+    // Optional: Refresh orders list or navigate back
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Cancel Failed: ${result?['message']}')),
+    );
+  }
+}
+
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -275,8 +292,28 @@ class OrderCard extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text("Cancel Order"),
+                        content: const Text("Are you sure you want to cancel this order?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text("No"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text("Yes"),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      cancelOrderHandler(context, order['_id']);
+                    }
                   },
                   icon: const Icon(Icons.cancel, color: Colors.white),
                   label: const Text(

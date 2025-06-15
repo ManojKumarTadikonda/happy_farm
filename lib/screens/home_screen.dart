@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:happy_farm/screens/cart_screen.dart';
 import 'package:happy_farm/service/banner_service.dart';
 import 'package:flutter/material.dart';
 import 'package:happy_farm/screens/filtered_products_screen.dart';
 import 'package:happy_farm/screens/productdetails_screen.dart';
 import 'package:happy_farm/widgets/shimmer_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../widgets/product_card.dart';
 import '../models/banner_model.dart';
@@ -52,14 +54,21 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchService = SearchService();
   final _productService = ProductService();
   bool isLoadingSearch = false;
+  String? userId;
   @override
   void initState() {
     super.initState();
     fetchAllProducts();
     fetchFeaturedProducts();
     fetchCategories();
+    _loadUser();
   }
-
+  Future<void> _loadUser() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    userId = prefs.getString('userId');
+  });
+}
   void _onSearchChanged(String query) async {
     setState(() {
       isSearch = query.isNotEmpty;
@@ -267,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const Icon(Icons.shopping_cart_outlined,
                   color: Colors.black87),
               onPressed: () {
-                // Navigate to cart
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>CartScreen(userId: userId!)));
               },
             ),
           ],

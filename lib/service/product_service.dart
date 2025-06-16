@@ -133,10 +133,17 @@ class ProductService {
     }
   }
 
-  Future<List<FilterProducts>> getProductById(String productId) async {
-    final headers = await getHeaders();
-    final uri = Uri.parse('$baseUrl/$productId');
-    final response = await http.get(uri, headers: headers);
-    return json.decode(response.body);
+  Future<AllProduct> getProductById(String productId) async {
+  final headers = await getHeaders();
+  final uri = Uri.parse('$baseUrl/$productId');
+  final response = await http.get(uri, headers: headers);
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    return AllProduct.fromJson(data);
+  } else {
+    throw Exception('Failed to load product');
   }
+}
+
 }

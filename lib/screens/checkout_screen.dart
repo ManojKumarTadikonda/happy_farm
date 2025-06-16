@@ -91,7 +91,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Order placed successfully!')),
       );
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>OrderSuccessPage())); // or navigate to success page
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  OrderSuccessPage())); // or navigate to success page
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,17 +149,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       _orderIdFromBackend = orderData['paymentHistoryId'];
 
-      final options = {
+      var options = {
         'key': 'rzp_live_DJA2rvcCmZFLh3',
-        'amount': orderData['razorpayAmount'],
+        'amount': orderData['razorpayAmount'], 
         'currency': orderData['currency'] ?? 'INR',
-        'name': 'E-Bharat',
-        'description': 'Payment for your order',
-        'order_id': orderData['razorpayOrderId'],
+        'name': 'E-Bharat', 
+        'description': 'Payment for your order', 
+        'order_id': orderData['razorpayOrderId']??'invalid',
         'prefill': {
-          'name': _nameController.text,
-          'email': _emailController.text,
-          'contact': _phoneController.text,
+          'name': _nameController.text, 
+          'email': _emailController.text, 
+          'contact': _phoneController.text, 
         },
         'theme': {'color': '#007B4F'}
       };

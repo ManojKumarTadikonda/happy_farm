@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:happy_farm/main.dart';
 import 'package:happy_farm/models/product_model.dart';
 import 'package:happy_farm/models/user_provider.dart';
+import 'package:happy_farm/screens/cart_screen.dart';
 import 'package:happy_farm/service/cart_service.dart';
 import 'package:happy_farm/service/review_service.dart';
 import 'package:happy_farm/service/whislist_service.dart';
 import 'package:happy_farm/widgets/snackbar.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductDetails extends StatefulWidget {
   final dynamic
@@ -33,7 +35,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   String wishId = "";
   bool isLoadingWish = false;
   bool isLoadingCart = false;
-
+  String? userId;
   @override
   void initState() {
     super.initState();
@@ -41,6 +43,14 @@ class _ProductDetailsState extends State<ProductDetails> {
     isWish = getIsWishList();
     isCart = getIsCart();
     checkWishlistStatus();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getString('userId');
+    });
   }
 
   String getProductId() {
@@ -223,12 +233,16 @@ class _ProductDetailsState extends State<ProductDetails> {
             label: "GO TO CART",
             textColor: Colors.amber,
             onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => const MainScreen(selectedIndex: 3),
-                ),
-                (route) => false,
-              );
+              // Navigator.of(context).pushAndRemoveUntil(
+              //   MaterialPageRoute(
+              //     builder: (context) => const MainScreen(selectedIndex: 3),
+              //   ),
+              //   (route) => false,
+              // );
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => CartScreen(userId: userId!)));
             },
           ),
           backgroundColor: Colors.black87,
@@ -241,7 +255,7 @@ class _ProductDetailsState extends State<ProductDetails> {
       );
     } else {
       setState(() {
-        isLoadingCart= false;
+        isLoadingCart = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to add to cart")),
@@ -575,7 +589,11 @@ class _ProductDetailsState extends State<ProductDetails> {
             Icons.shopping_cart,
             color: Colors.white,
           ),
-          label: Text(isCart ? "Go to Cart" : isLoadingCart ? "Adding..." : "Add To Cart"),
+          label: Text(isCart
+              ? "Go to Cart"
+              : isLoadingCart
+                  ? "Adding..."
+                  : "Add To Cart"),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

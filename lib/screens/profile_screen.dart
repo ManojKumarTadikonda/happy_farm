@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/main.dart';
 import 'package:happy_farm/models/user_provider.dart';
+import 'package:happy_farm/screens/privacypolicyscreen.dart';
 import 'package:happy_farm/screens/update_password.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -131,6 +132,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'title': 'Help & Support',
         'subtitle': 'Get assistance and answers',
         'function': () {}
+      },
+      {
+        'icon': Icons.privacy_tip_outlined,
+        'title': 'Privacy Policy',
+        'subtitle': 'View our privacy practices',
+        'function': () {
+          // Navigate to the Privacy Policy screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PrivacyPolicyScreen()),
+          );
+        },
       },
       {
         'icon': Icons.logout,

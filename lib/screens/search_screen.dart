@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/screens/productdetails_screen.dart';
+import 'package:happy_farm/service/product_service.dart';
 import 'package:happy_farm/service/search_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,6 +71,20 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
   }
+  Future<void> fetchProductById(String productId) async {
+  try {
+    final productService = ProductService();
+    final product = await productService.getProductById(productId);
+    if (product != null) {
+      print('Product fetched: ${product.toString()}');
+      // You can now use the product object, e.g., navigate to product details
+    } else {
+      print('No product found for ID: $productId');
+    }
+  } catch (e) {
+    print('Error fetching product: $e');
+  }
+}
 
   Widget _buildSearchField() {
     return Container(
@@ -379,7 +395,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             onTap: () {
-              // Navigate to product details if needed
+              fetchProductById(product['_id']);
             },
           ),
         );

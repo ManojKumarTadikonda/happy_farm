@@ -35,10 +35,10 @@ class WishlistService {
     }
   }
 
-  static Future<bool> removeFromWishlist(String wishlistItemId) async {
+  static Future<bool> removeFromWishlist(String ProductId) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('token');
-    final url = Uri.parse('$baseUrl/$wishlistItemId');
+    final url = Uri.parse('$baseUrl/$ProductId');
 
     final response = await http.delete(
       url,

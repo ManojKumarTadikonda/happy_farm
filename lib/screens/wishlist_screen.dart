@@ -142,7 +142,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                               });
 
                               await WishlistService.removeFromWishlist(
-                                  wishlistId);
+                                  product['_id']);
 
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -223,7 +223,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                                                   onTap: () async {
                                                     await WishlistService
                                                         .removeFromWishlist(
-                                                            wishlistId);
+                                                            product['_id']);
                                                     setState(() {
                                                       wishlist.removeAt(index);
                                                     });

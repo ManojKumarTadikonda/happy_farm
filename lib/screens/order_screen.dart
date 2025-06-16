@@ -67,6 +67,10 @@ class _OrdersScreenState extends State<OrdersScreen>
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen())),
+        ),
       ),
       body: isLoading
           ? Center(child: OrderShimmer())

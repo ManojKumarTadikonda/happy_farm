@@ -13,6 +13,7 @@ import 'package:happy_farm/screens/home_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
   runApp(
     MultiProvider(

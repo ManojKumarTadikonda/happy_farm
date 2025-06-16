@@ -45,8 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
         const SnackBar(content: Text('Login successful!')),
       );
 
-      Navigator.of(context).pushReplacement(
+      Navigator.pushAndRemoveUntil(
+        context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
+        (Route<dynamic> route) => false,
       );
     } else {
       setState(() {
@@ -111,7 +113,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text('Sign in to continue',
                     style: TextStyle(fontSize: 14, color: Colors.grey)),
                 const SizedBox(height: 40),
-
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -130,11 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextButton(
                     onPressed: () {
                       Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ForgotPassWord(),
-                    ),
-                  );
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgotPassWord(),
+                        ),
+                      );
                     },
                     child: const Text(
                       'Forgot Password?',

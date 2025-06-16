@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/main.dart';
 import 'package:happy_farm/models/user_provider.dart';
+import 'package:happy_farm/screens/contact_screen.dart';
 import 'package:happy_farm/screens/privacypolicyscreen.dart';
 import 'package:happy_farm/screens/update_password.dart';
 import 'package:happy_farm/utils/app_theme.dart';
@@ -29,6 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen())),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -129,9 +134,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
       {
         'icon': Icons.help_outline,
-        'title': 'Help & Support',
+        'title': 'Contact & Support',
         'subtitle': 'Get assistance and answers',
-        'function': () {}
+        'function': () {
+          Navigator.push(context, MaterialPageRoute(builder: (context)=>ContactScreen()));
+        }
       },
       {
         'icon': Icons.privacy_tip_outlined,

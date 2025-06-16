@@ -71,20 +71,26 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
   }
+
   Future<void> fetchProductById(String productId) async {
-  try {
-    final productService = ProductService();
-    final product = await productService.getProductById(productId);
-    if (product != null) {
-      print('Product fetched: ${product.toString()}');
-      // You can now use the product object, e.g., navigate to product details
-    } else {
-      print('No product found for ID: $productId');
+    try {
+      final productService = ProductService();
+      final product = await productService.getProductById(productId);
+      if (product != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (builder) => ProductDetails(
+              product: product,
+            ),
+          ),
+        );
+      } else {
+        print('No product found for ID: $productId');
+      }
+    } catch (e) {
+      print('Error fetching product: $e');
     }
-  } catch (e) {
-    print('Error fetching product: $e');
   }
-}
 
   Widget _buildSearchField() {
     return Container(
@@ -106,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
         onSubmitted: _performSearch,
         style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
-          hintText: 'Search for fresh products...',
+          hintText: 'Search for products...',
           hintStyle: TextStyle(
             color: Colors.grey[600],
             fontSize: 16,
@@ -274,7 +280,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Find fresh products from our farm",
+              "Find products from our farm",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],

@@ -71,6 +71,7 @@ class UserService {
     }
   }
   
+  
   //fetch User Details
   Future<Map<String, dynamic>?> fetchUserDetails(String userId) async {
      final prefs = await SharedPreferences.getInstance();
@@ -133,29 +134,20 @@ class UserService {
 
   //Forgot Password
   Future<bool> changeForgotPassword(String email, String newPassword) async {
-    final url = Uri.parse('$_baseUrl/forgotPassword/changePassword');
+  final url = Uri.parse('$_baseUrl/forgotPassword/changePassword');
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'newPass': newPassword,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // final data = jsonDecode(response.body);
-        return true;
-      } else {
-        // final error = jsonDecode(response.body);
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'newPass': newPassword}),
+    );
+    return response.statusCode == 200;
+  } catch (e) {
+    return false;
   }
+}
+
   //Update Password
   Future<Map<String, dynamic>> changePassword({
     required String email,
@@ -203,6 +195,7 @@ class UserService {
       };
     }
   }
+  
 }
 
 

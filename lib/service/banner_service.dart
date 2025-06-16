@@ -1,17 +1,13 @@
 import 'dart:convert';
 import 'package:happy_farm/models/banner_model.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class BannerService {
   final String baseUrl = 'https://happyfarm-server.onrender.com/api';
 
   Future<Map<String, String>> getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
     };
   }
 

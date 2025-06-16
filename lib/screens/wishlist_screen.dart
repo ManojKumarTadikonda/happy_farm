@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/main.dart';
 import 'package:happy_farm/models/product_model.dart';
 import 'package:happy_farm/screens/productdetails_screen.dart';
 import 'package:happy_farm/service/cart_service.dart' show CartService;
@@ -70,6 +71,10 @@ class _WishlistScreenState extends State<WishlistScreen>
             ),
           ),
         ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen())),
+        ),
       ),
       body: FutureBuilder<void>(
         future: wishlistFuture,

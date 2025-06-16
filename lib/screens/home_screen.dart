@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:happy_farm/main.dart';
+import 'package:happy_farm/models/cart_model.dart';
 import 'package:happy_farm/screens/cart_screen.dart';
 import 'package:happy_farm/service/banner_service.dart';
 import 'package:flutter/material.dart';
 import 'package:happy_farm/screens/filtered_products_screen.dart';
 import 'package:happy_farm/screens/productdetails_screen.dart';
+import 'package:happy_farm/service/cart_service.dart';
 import 'package:happy_farm/widgets/shimmer_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
@@ -55,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
   bool isLoadingSearch = false;
   String? userId;
+  int cartItemCount = 0;
   @override
   void initState() {
     super.initState();
@@ -62,13 +66,16 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchFeaturedProducts();
     fetchCategories();
     _loadUser();
+    loadCartItemCount();
   }
+
   Future<void> _loadUser() async {
-  final prefs = await SharedPreferences.getInstance();
-  setState(() {
-    userId = prefs.getString('userId');
-  });
-}
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getString('userId');
+    });
+  }
+
   void _onSearchChanged(String query) async {
     setState(() {
       isSearch = query.isNotEmpty;
@@ -96,6 +103,20 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } finally {
       isLoadingSearch = false;
+    }
+  }
+
+  Future<void> loadCartItemCount() async {
+    try {
+      final List<CartItem> cartItems = await CartService.fetchCart();
+      setState(() {
+        cartItemCount = cartItems.length;
+      });
+    } catch (e) {
+      print("Error fetching cart item count: $e");
+      setState(() {
+        cartItemCount = 0;
+      });
     }
   }
 
@@ -237,54 +258,97 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1, // Small shadow to separate AppBar from body
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Left: Menu or Close
-            IconButton(
-              icon: Icon(
-                _currentPage == HomePageView.menu ? Icons.close : Icons.menu,
-                color: Colors.black87,
-              ),
-              onPressed:
-                  _currentPage == HomePageView.menu ? _onCloseMenu : _onMenuTap,
-            ),
-
-            // Center: Icon + Text
-            Row(
-              children: const [
-                Icon(Icons.agriculture, color: Color(0xFF4CAF50)),
-                SizedBox(width: 6),
-                Text(
-                  'SabbaFarm',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to MainScreen instead of going back
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false, // remove all previous routes
+        );
+        return false; // prevent default back behavior
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 1, // Small shadow to separate AppBar from body
+          automaticallyImplyLeading: false,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Left: Menu or Close
+              IconButton(
+                icon: Icon(
+                  _currentPage == HomePageView.menu ? Icons.close : Icons.menu,
+                  color: Colors.black87,
                 ),
-              ],
-            ),
+                onPressed: _currentPage == HomePageView.menu
+                    ? _onCloseMenu
+                    : _onMenuTap,
+              ),
 
-            // Right: Cart Icon
-            IconButton(
-              icon: const Icon(Icons.shopping_cart_outlined,
-                  color: Colors.black87),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>CartScreen(userId: userId!)));
-              },
-            ),
-          ],
+              // Center: Icon + Text
+              Row(
+                children: const [
+                  Icon(Icons.agriculture, color: Color(0xFF4CAF50)),
+                  SizedBox(width: 6),
+                  Text(
+                    'SabbaFarm',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Right: Cart Icon with badge
+              Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart_outlined,
+                        color: Colors.black87),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CartScreen(userId: userId!),
+                        ),
+                      );
+                    },
+                  ),
+                  if (cartItemCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints:
+                            const BoxConstraints(minWidth: 20, minHeight: 20),
+                        child: Text(
+                          '$cartItemCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: isSearch ? _buildSearchResults() : _buildBodyContent(),
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: SafeArea(
+          child: isSearch ? _buildSearchResults() : _buildBodyContent(),
+        ),
       ),
     );
   }
@@ -990,7 +1054,7 @@ class _AutoScrollBannerState extends State<AutoScrollBanner> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12.0),
                     image: DecorationImage(
-                      image: NetworkImage(_banners[index].imageUrl),
+                      image: NetworkImage(_banners[index].images.first),
                       fit: BoxFit.cover,
                     ),
                   ),

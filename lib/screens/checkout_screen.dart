@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/cart_model.dart';
 import 'package:happy_farm/screens/ordersuccesspage.dart';
+import 'package:happy_farm/service/cart_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -72,11 +73,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    debugPrint('✅ Payment Successful!');
-    debugPrint('🔹 Payment ID: ${response.paymentId}');
-    debugPrint('🔹 Order ID: ${response.orderId}');
-    debugPrint('🔹 Signature: ${response.signature}');
-
     final verified = await _orderService.verifyPayment(
       razorpayOrderId: response.orderId!,
       razorpayPaymentId: response.paymentId!,
@@ -84,9 +80,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       orderId: _orderIdFromBackend!,
     );
 
-    debugPrint('🔍 Payment verification result: $verified');
-
     if (verified) {
+      await CartService.clearCart();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Order placed successfully!')),
@@ -150,16 +145,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _orderIdFromBackend = orderData['paymentHistoryId'];
 
       var options = {
-        'key': 'rzp_live_DJA2rvcCmZFLh3',
-        'amount': orderData['razorpayAmount'], 
+        'key': 'rzp_live_fIraFAOg9vHTJe',
+        'amount': orderData['razorpayAmount'],
         'currency': orderData['currency'] ?? 'INR',
-        'name': 'E-Bharat', 
-        'description': 'Payment for your order', 
-        'order_id': orderData['razorpayOrderId']??'invalid',
+        'name': 'E-Bharat',
+        'description': 'Payment for your order',
+        'order_id': orderData['razorpayOrderId'] ?? 'invalid',
         'prefill': {
-          'name': _nameController.text, 
-          'email': _emailController.text, 
-          'contact': _phoneController.text, 
+          'name': _nameController.text,
+          'email': _emailController.text,
+          'contact': _phoneController.text,
         },
         'theme': {'color': '#007B4F'}
       };
@@ -239,15 +234,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: _buildFormTextField(
                   controller: _nameController,
                   label: "Full Name *",
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Required' : null,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildFormTextField(
-                  controller: _countryController,
-                  label: "Country *",
                   validator: (val) =>
                       val == null || val.isEmpty ? 'Required' : null,
                 ),

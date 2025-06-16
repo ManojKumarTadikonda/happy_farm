@@ -32,7 +32,6 @@ class _ProductDetailsState extends State<ProductDetails> {
   bool isSubmitting = false;
   bool isWish = false;
   bool isCart = false;
-  String wishId = "";
   bool isLoadingWish = false;
   bool isLoadingCart = false;
   String? userId;
@@ -116,10 +115,6 @@ class _ProductDetailsState extends State<ProductDetails> {
       );
 
       final found = matchedItem.isNotEmpty;
-
-      setState(() {
-        wishId = found ? matchedItem['_id'] : null;
-      });
     } catch (e) {
       print('Error checking wishlist status: $e');
     }
@@ -165,7 +160,6 @@ class _ProductDetailsState extends State<ProductDetails> {
       final String id = await WishlistService.addToMyList(productId);
       setState(() {
         isWish = true;
-        wishId = id;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -181,13 +175,13 @@ class _ProductDetailsState extends State<ProductDetails> {
   }
 
   Future<void> removeWishlist() async {
-    final wishlistItemId = wishId;
-    print(wishlistItemId);
     try {
       setState(() {
         isLoadingWish = true;
       });
-      final success = await WishlistService.removeFromWishlist(wishlistItemId);
+      final success = await WishlistService.removeFromWishlist(
+        getProductId(),
+      );
       if (success) {
         setState(() {
           isWish = false;
@@ -233,12 +227,6 @@ class _ProductDetailsState extends State<ProductDetails> {
             label: "GO TO CART",
             textColor: Colors.amber,
             onPressed: () {
-              // Navigator.of(context).pushAndRemoveUntil(
-              //   MaterialPageRoute(
-              //     builder: (context) => const MainScreen(selectedIndex: 3),
-              //   ),
-              //   (route) => false,
-              // );
               Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -380,7 +368,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                   const SizedBox(height: 16),
 
                   // Quantity Selector and Add to Cart Button
-                  _buildQuantityAndCartSection(),
+                  _buildQuantityAndCartSection(userId!),
                   const SizedBox(height: 24),
 
                   // Product Information Cards
@@ -542,7 +530,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     );
   }
 
-  Widget _buildQuantityAndCartSection() {
+  Widget _buildQuantityAndCartSection(String userId) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -576,12 +564,12 @@ class _ProductDetailsState extends State<ProductDetails> {
         ElevatedButton.icon(
           onPressed: () {
             isCart
-                ? Navigator.of(context).pushAndRemoveUntil(
+                ? Navigator.of(context).push(
                     MaterialPageRoute(
-                        builder: (builder) => MainScreen(
-                              selectedIndex: 3,
-                            )),
-                    (route) => false,
+                      builder: (builder) => CartScreen(
+                        userId: userId,
+                      ),
+                    ),
                   )
                 : addToCart();
           },

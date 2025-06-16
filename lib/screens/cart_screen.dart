@@ -48,14 +48,14 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color.fromRGBO(245, 245, 245, 1),
       appBar: AppBar(
         title: const Text("My Cart"),
         centerTitle: true,
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
       ),
       body: _isLoading
           ? Center(child: Lottie.asset('assets/lottie/cartloading.json'))

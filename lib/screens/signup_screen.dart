@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/screens/login_screen.dart';
 import 'package:happy_farm/service/user_service.dart';
+
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -15,18 +16,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final UserService _authService=UserService();
+  final UserService _authService = UserService();
   bool _isLoading = false;
   String? _errorMessage;
 
-   Future<void> _submitForm() async {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-
     final result = await _authService.signUp(
       name: _fullNameController.text,
       phone: _phoneController.text,
@@ -36,21 +36,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     setState(() => _isLoading = false);
 
-    if (result != null && result['error'] == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Account created successfully!')),
+//  SUCCESS case
+    if (result?['success'] == true) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: Text("$result?['message'].Login to expolre"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    } else {
-      setState(() => _errorMessage = result?['error'] ?? 'Unexpected error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_errorMessage!)),
+    }
+// ERROR case
+    else {
+      final errorMessage = result?['error'] ??
+          result?['message'] ??
+          'Registration failed. Please try again.';
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
     }
   }
+
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,

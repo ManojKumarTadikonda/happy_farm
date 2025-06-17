@@ -9,7 +9,7 @@ class UniversalProductCard extends StatefulWidget {
   const UniversalProductCard({
     super.key,
     required this.product,
-    this.imageHeight = 180, // default image height
+    this.imageHeight = 160, // Reduced for GridView fit
   });
 
   @override
@@ -59,7 +59,10 @@ class _UniversalProductCardState extends State<UniversalProductCard> {
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),side: BorderSide(color: Colors.grey.shade300)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade300),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -89,8 +92,7 @@ class _UniversalProductCardState extends State<UniversalProductCard> {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.red.shade100,
                       borderRadius: BorderRadius.circular(4),
@@ -108,25 +110,31 @@ class _UniversalProductCardState extends State<UniversalProductCard> {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 10,right: 10, top: 10,),
+            padding: const EdgeInsets.only(
+              left: 10,
+              right: 10,
+              top: 10,
+              bottom: 10, // ✅ Added to prevent overflow
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   widget.product.name,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Row(
                   children: [
                     Text(
                       '₹${price.actualPrice.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.green,
                       ),
@@ -135,27 +143,21 @@ class _UniversalProductCardState extends State<UniversalProductCard> {
                     Text(
                       '₹${price.oldPrice.toStringAsFixed(1)}',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.grey,
                         decoration: TextDecoration.lineThrough,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      price.countInStock > 0 ? 'In Stock' : 'Out of Stock',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color:
-                            price.countInStock > 0 ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  price.countInStock > 0 ? 'In Stock' : 'Out of Stock',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: price.countInStock > 0 ? Colors.green : Colors.red,
+                  ),
                 ),
               ],
             ),

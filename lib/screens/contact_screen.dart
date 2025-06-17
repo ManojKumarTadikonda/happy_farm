@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -151,7 +152,7 @@ class ContactScreen extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             _buildSocialButton(
-              icon: Icons.camera_alt, // Substitute for Instagram
+              icon: FontAwesomeIcons.instagram,
               color: Colors.purple,
               onTap: () =>
                   _launchUrl("https://www.instagram.com/happyfarmpsp"),

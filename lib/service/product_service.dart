@@ -33,6 +33,7 @@ class ProductService {
   Future<List<FilterProducts>> getProductsByCatName(String catName) async {
     final headers = await getHeaders();
     final uri = Uri.parse('$baseUrl/catName?catName=$catName');
+    print("catname:$catName");
     final response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);

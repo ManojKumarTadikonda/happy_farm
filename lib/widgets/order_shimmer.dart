@@ -8,7 +8,7 @@ class OrderShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: 6, // Number of shimmer cards to show
+      itemCount: 3, // Number of shimmer cards to show
       itemBuilder: (context, index) {
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),

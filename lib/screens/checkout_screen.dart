@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/cart_model.dart';
 import 'package:happy_farm/screens/ordersuccesspage.dart';
+
 import 'package:happy_farm/service/cart_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,7 +73,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 16),
+                const Text("Finalizing your order..."),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    _showLoadingDialog(); // Show loading while verifying + clearing cart
+
     final verified = await _orderService.verifyPayment(
       razorpayOrderId: response.orderId!,
       razorpayPaymentId: response.paymentId!,
@@ -80,19 +107,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       orderId: _orderIdFromBackend!,
     );
 
+    if (!mounted) return;
+
+    Navigator.of(context).pop(); // Hide the loading dialog
+
     if (verified) {
       await CartService.clearCart();
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Order placed successfully!')),
       );
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  OrderSuccessPage())); // or navigate to success page
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderSuccessPage(),
+        ),
+      );
     } else {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payment verification failed')),
       );

@@ -8,7 +8,7 @@ class WishlistShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: 5, // number of shimmer placeholders
+      itemCount: 3, // number of shimmer placeholders
       itemBuilder: (context, index) {
         return Card(
           elevation: 0,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/main.dart';
-import 'package:happy_farm/screens/order_screen.dart';
 
 class OrderSuccessPage extends StatelessWidget {
   const OrderSuccessPage({super.key});
@@ -61,7 +60,7 @@ class OrderSuccessPage extends StatelessWidget {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => OrdersScreen()));
+                              builder: (context) => MainScreen(selectedIndex: 3,)));
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF007B4F),

@@ -30,10 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen())),
-        ),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -123,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       {
         'icon': Icons.lock_outlined,
         'title': 'Security',
-        'subtitle': 'Change password and security settings',
+        'subtitle': 'Change password',
         'function': () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -137,7 +133,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'title': 'Contact & Support',
         'subtitle': 'Get assistance and answers',
         'function': () {
-          Navigator.push(context, MaterialPageRoute(builder: (context)=>ContactScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => ContactScreen()));
         }
       },
       {
@@ -207,7 +204,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
         margin: const EdgeInsets.only(bottom: 12),
@@ -244,11 +240,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey,
             ),
           ],
         ),

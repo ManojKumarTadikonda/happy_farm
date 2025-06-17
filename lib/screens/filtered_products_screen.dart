@@ -6,8 +6,19 @@ import 'package:happy_farm/widgets/product_card.dart';
 
 class FilteredProductsScreen extends StatefulWidget {
   final List<FilterProducts> products;
+  final String categoryName;
+  final int? minPrice;
+  final int? maxPrice;
+  final int? rating;
 
-  const FilteredProductsScreen({super.key, required this.products});
+  const FilteredProductsScreen({
+    super.key,
+    required this.products,
+    required this.categoryName,
+    this.minPrice,
+    this.maxPrice,
+    this.rating,
+  });
 
   @override
   State<FilteredProductsScreen> createState() => _FilteredProductsScreenState();
@@ -15,7 +26,6 @@ class FilteredProductsScreen extends StatefulWidget {
 
 class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
   int _visibleFilteredCount = 5;
-
   @override
   Widget build(BuildContext context) {
     final visibleFilteredProducts =
@@ -25,15 +35,15 @@ class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Top Header: Applied Filters + X icon
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Filtered Products",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  "Applied Filters",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -45,6 +55,43 @@ class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
                   },
                 ),
               ],
+            ),
+          ),
+
+          // Applied Filter Chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  label: Text(widget.categoryName),
+                  backgroundColor: Colors.blue.shade50,
+                  labelStyle: const TextStyle(color: Colors.blue),
+                ),
+                if (widget.minPrice != null && widget.maxPrice != null)
+                  Chip(
+                    label: Text("₹${widget.minPrice} - ₹${widget.maxPrice}"),
+                    backgroundColor: Colors.green.shade50,
+                    labelStyle: const TextStyle(color: Colors.green),
+                  ),
+                if (widget.rating != null && widget.rating! > 0)
+                  Chip(
+                    label: Text("${widget.rating}★ & above"),
+                    backgroundColor: Colors.orange.shade50,
+                    labelStyle: const TextStyle(color: Colors.orange),
+                  ),
+              ],
+            ),
+          ),
+
+          // Filtered Products Heading
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              "Filtered Products",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
 
@@ -79,7 +126,7 @@ class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                           ProductDetails(product: product),
+                                          ProductDetails(product: product),
                                     ),
                                   );
                                 },

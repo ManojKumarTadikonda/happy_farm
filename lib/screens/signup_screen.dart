@@ -19,6 +19,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final UserService _authService = UserService();
   bool _isLoading = false;
   String? _errorMessage;
+  bool _obscurePassword = true;
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
@@ -65,42 +66,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final errorMessage = result?['error'] ??
           result?['message'] ??
           'Registration failed. Please try again.';
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Error'),
+
+      // ✅ Show Floating SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(errorMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 3),
         ),
       );
     }
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
+  InputDecoration _inputDecoration(String label, IconData prefixIcon,
+      {bool isPassword = false}) {
     return InputDecoration(
       labelText: label,
-      labelStyle:
-          TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500),
-      prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+      prefixIcon: Icon(prefixIcon, color: AppTheme.primaryColor),
+      suffixIcon: isPassword
+          ? IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: Colors.grey[600],
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            )
+          : null,
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16.0),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(color: Colors.grey[300]!),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey[300]!),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
       ),
     );
   }
@@ -138,7 +139,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   TextFormField(
                     controller: _fullNameController,
                     decoration: _inputDecoration('Full Name', Icons.person),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty)
+                        return 'Full name is required';
+                      if (value.length < 3)
+                        return 'Full name must be at least 3 characters';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -146,22 +153,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     keyboardType: TextInputType.phone,
                     decoration:
                         _inputDecoration('Phone Number', Icons.phone_android),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty)
+                        return 'Phone number is required';
+                      if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
+                        return 'Enter a valid 10-digit phone number';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: _inputDecoration('Email', Icons.email),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty)
+                        return 'Email is required';
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(value.trim())) {
+                        return 'Enter a valid email address';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration:
-                        _inputDecoration('Password', Icons.lock_outline),
-                    validator: (value) => value!.isEmpty ? 'Required' : null,
+                    obscureText: _obscurePassword,
+                    decoration: _inputDecoration('Password', Icons.lock,
+                        isPassword: true),
+                    validator: (value) {
+                      if (value == null || value.isEmpty)
+                        return 'Password is required';
+                      if (value.length < 6)
+                        return 'Password must be at least 6 characters';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   if (_errorMessage != null)

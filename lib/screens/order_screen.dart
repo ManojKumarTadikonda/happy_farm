@@ -67,10 +67,7 @@ class _OrdersScreenState extends State<OrdersScreen>
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen())),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: isLoading
           ? Center(child: OrderShimmer())
@@ -153,23 +150,8 @@ class OrderCard extends StatelessWidget {
   final Map order;
 
   OrderCard({required this.order, required this.onTap});
+
   
-  void cancelOrderHandler(BuildContext context, String orderId) async {
-  final orderService = OrderService();
-  final result = await orderService.cancelOrder(orderId);
-
-  if (result?['success'] == true) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Order Cancelled: ${result?['message']}')),
-    );
-    // Optional: Refresh orders list or navigate back
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cancel Failed: ${result?['message']}')),
-    );
-  }
-}
-
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -258,7 +240,7 @@ class OrderCard extends StatelessWidget {
                           order['orderStatus'].toString().capitalize(),
                           style: TextStyle(
                             color: _getStatusColor(order['orderStatus'] ?? ''),
-                            fontSize: 13,
+                            fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -268,7 +250,7 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               const Divider(thickness: 0.8),
 
               /// Order Info
@@ -289,52 +271,6 @@ class OrderCard extends StatelessWidget {
               ),
 
               const SizedBox(height: 12),
-              const Divider(thickness: 0.8),
-
-              /// Cancel Button
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text("Cancel Order"),
-                        content: const Text("Are you sure you want to cancel this order?"),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text("No"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text("Yes"),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      cancelOrderHandler(context, order['_id']);
-                    }
-                  },
-                  icon: const Icon(Icons.cancel, color: Colors.white),
-                  label: const Text(
-                    "Cancel Order",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    elevation: 2,
-                  ),
-                ),
-              ),
             ],
           ),
         ),

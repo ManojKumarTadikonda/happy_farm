@@ -127,7 +127,7 @@ class OrderService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('manoj:$data');
+        print('data$data');
         return {
           'success': true,
           'message': data['message'],

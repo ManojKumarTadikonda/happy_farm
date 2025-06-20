@@ -5,6 +5,7 @@ import 'package:happy_farm/screens/login_screen.dart';
 import 'package:happy_farm/screens/order_screen.dart';
 import 'package:happy_farm/screens/profile_screen.dart';
 import 'package:happy_farm/screens/search_screen.dart';
+import 'package:happy_farm/screens/splash_screen.dart';
 import 'package:happy_farm/screens/wishlist_screen.dart';
 import 'package:happy_farm/service/user_service.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +27,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
       title: 'Sabba Farm',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const MainScreen(),
+      home: const SplashScreen(), // Start with Splash
     );
   }
 }

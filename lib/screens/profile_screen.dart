@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/main.dart';
-import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/screens/contact_screen.dart';
 import 'package:happy_farm/screens/privacypolicyscreen.dart';
 import 'package:happy_farm/screens/update_password.dart';
 import 'package:happy_farm/utils/app_theme.dart';
-import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:happy_farm/service/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:happy_farm/screens/personal_info.dart';
+import 'package:flutter/foundation.dart';
+import 'package:crop_your_image/crop_your_image.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,10 +22,345 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String profileImage = '';
-
+  Map<String, dynamic>? _userDetails;
+  bool _isLoading = true;
   @override
+  void initState() {
+    super.initState();
+    _loadUserDetails();
+  }
+
+  Future<void> _loadUserDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    String? userId = prefs.getString('userId');
+    if (userId == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+    UserService userService = UserService();
+    Map<String, dynamic>? userData = await userService.fetchUserDetails(userId);
+    if (userData != null) {
+      setState(() {
+        _userDetails = userData;
+        // Get first image if available
+        profileImage =
+            (userData['images'] != null && userData['images'].isNotEmpty)
+                ? userData['images'][0]
+                : '';
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickCropAndUploadImage({
+    required bool isEdit,
+    String? oldImageUrl, // Required only if editing
+  }) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile == null) return;
+
+    final imageBytes = await pickedFile.readAsBytes();
+    final cropController = CropController();
+    bool isCropping = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              contentPadding: EdgeInsets.zero,
+              content: SizedBox(
+                width: 400,
+                height: 400,
+                child: Stack(
+                  children: [
+                    Crop(
+                      controller: cropController,
+                      image: imageBytes,
+                      withCircleUi: false,
+                      aspectRatio: 1,
+                      onCropped: (result) async {
+                        switch (result) {
+                          case CropSuccess(:final croppedImage):
+                            final tempDir = await getTemporaryDirectory();
+                            final file =
+                                await File('${tempDir.path}/cropped.jpg')
+                                    .writeAsBytes(croppedImage);
+
+                            try {
+                              final userService = UserService();
+
+                              if (isEdit &&
+                                  oldImageUrl != null &&
+                                  oldImageUrl.isNotEmpty) {
+                                final newUrl = await userService.editImage(
+                                  oldImageUrl: oldImageUrl,
+                                  newImageFile: file,
+                                );
+
+                                if (newUrl != null) {
+                                  setState(() {
+                                    profileImage = newUrl;
+                                  });
+                                }
+                              } else {
+                                final newUrl =
+                                    await userService.uploadProfileImage(file);
+
+                                if (newUrl != null) {
+                                  setState(() {
+                                    profileImage = newUrl as String;
+                                  });
+                                }
+                              }
+
+                              Navigator.of(context).pop(); // Close crop dialog
+
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext dialogContext) {
+                                  return AlertDialog(
+                                    title: const Text('Success'),
+                                    content: Text(isEdit
+                                        ? 'Image updated successfully!'
+                                        : 'Profile image uploaded successfully!'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(dialogContext).pop();
+                                        },
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            } catch (e) {
+                              Navigator.of(context).pop();
+
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext dialogContext) {
+                                  return AlertDialog(
+                                    title: const Text('Upload Failed'),
+                                    content:
+                                        const Text('Failed to process image'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(dialogContext).pop();
+                                        },
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+                            break;
+
+                          case CropFailure(:final cause):
+                            Navigator.of(context).pop();
+                            showDialog(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: Text('Crop Failed'),
+                                content: Text('Cause: $cause'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    child: Text('OK'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            break;
+                        }
+                      },
+                    ),
+                    if (isCropping)
+                      const Center(child: CircularProgressIndicator()),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() => isCropping = true);
+                    cropController.crop();
+                  },
+                  child: const Text('Crop & Upload'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+void _showImageDialog() {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 10),
+
+                  // Enlarged Profile Image
+                  CircleAvatar(
+                    radius: 80, // Increased size
+                    backgroundColor: Colors.grey.shade200,
+                    backgroundImage: profileImage.isNotEmpty
+                        ? NetworkImage(profileImage)
+                        : const AssetImage('assets/images/profile.png')
+                            as ImageProvider,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    profileImage.isNotEmpty
+                        ? 'Profile Image'
+                        : 'No Image Uploaded',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  profileImage.isNotEmpty
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Delete Button
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final userService = UserService();
+                                final success = await userService
+                                    .deleteImage(profileImage);
+
+                                if (success) {
+                                  setState(() {
+                                    profileImage = '';
+                                  });
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Profile image deleted successfully'),
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Failed to delete profile image'),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon:
+                                  const Icon(Icons.delete, color: Colors.white),
+                              label: const Text("Remove"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+
+                            // Edit Button
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _pickCropAndUploadImage(isEdit: true);
+                              },
+                              icon:
+                                  const Icon(Icons.edit, color: Colors.white),
+                              label: const Text("Edit"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _pickCropAndUploadImage(isEdit: false);
+                          },
+                          icon: const Icon(Icons.upload, color: Colors.white),
+                          label: const Text("Upload Image"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 24),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+            ),
+
+            Positioned(
+              top: 8,
+              right: 8,
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).pop();
+                },
+                child: const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.black54,
+                  child: Icon(Icons.close, color: Colors.white, size: 18),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+ @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserProvider>(context, listen: false).user;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -31,16 +370,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileHeader(
-                user.username ?? 'Unkown', user.email ?? 'Unkown'),
-            const SizedBox(height: 40),
-            _buildOptions(context),
-          ],
-        ),
-      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildProfileHeader(
+                    _userDetails?['name'] ?? 'Unknown',
+                    _userDetails?['email'] ?? 'Unknown',
+                  ),
+                  const SizedBox(height: 40),
+                  _buildOptions(context),
+                ],
+              ),
+            ),
     );
   }
 
@@ -49,32 +392,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.only(top: 30, left: 20, right: 20),
       child: Row(
         children: [
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 4),
+          GestureDetector(
+            onTap: () {
+              _showImageDialog();
+            },
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
+                  ),
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundImage: profileImage.isNotEmpty
+                        ? NetworkImage(profileImage)
+                        : const AssetImage('assets/images/profile.png')
+                            as ImageProvider,
+                  ),
                 ),
-                child: const CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage('assets/images/profile.png'),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.camera_alt_outlined,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(width: 20),
           Column(
@@ -82,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 name,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -91,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 6),
               Text(
                 email,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   color: Colors.black,
                 ),

@@ -49,7 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _visibleAllCount = 2;
   String selectedCatId = '';
   String selectedCatName = '';
-  List<dynamic> _searchResults = [];
   bool isSearch = false;
   final _productService = ProductService();
   bool isLoadingSearch = false;
@@ -202,11 +201,12 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _isLoading = true;
     });
-
+    filteredCategoryName=catName;
     try {
       final products = await _productService.getProductsByCatName(catName);
       setState(() {
         _filteredProducts = products;
+         _currentPage = HomePageView.filtered;
       });
     } catch (e) {
       debugPrint('Error fetching category products: $e');
@@ -263,15 +263,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Center: Icon + Text
               Row(
-                children: const [
-                  Icon(Icons.agriculture, color: Color(0xFF4CAF50)),
-                  SizedBox(width: 6),
-                  Text(
-                    'SabbaFarm',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
+                children: [
+                  Image.asset(
+                    'assets/images/sabba krish logo.png',
+                    width: 140,
+                    height: 70,
                   ),
                 ],
               ),
@@ -320,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: const Color(0xFFF5F5F5),
         body: SafeArea(
-          child: isSearch ? _buildSearchResults() : _buildBodyContent(),
+          child: _buildBodyContent(),
         ),
       ),
     );
@@ -328,70 +324,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildLoadingView() {
     return const ShimmerHomeScreen();
-  }
-
-  Widget _buildSearchResults() {
-    if (isLoadingSearch) {
-      return const Center(child: Text('Loading...'));
-    }
-
-    if (_searchResults.isEmpty) {
-      return const Center(child: Text('No results found'));
-    }
-
-    return ListView.builder(
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final product = _searchResults[index];
-        final imageUrl =
-            (product['images'] != null && product['images'].isNotEmpty)
-                ? product['images'][0]
-                : null;
-        final priceInfo =
-            (product['prices'] != null && product['prices'].isNotEmpty)
-                ? product['prices'][0]
-                : null;
-
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: ListTile(
-            leading: imageUrl != null
-                ? Image.network(
-                    imageUrl,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image),
-                  )
-                : const Icon(Icons.image_not_supported),
-            title: Text(product['name'] ?? 'Unnamed Product'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (priceInfo != null)
-                  Text(
-                    'Price: ₹${priceInfo['actualPrice']}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                if (product['catName'] != null)
-                  Text('Category: ${product['catName']}'),
-              ],
-            ),
-            onTap: () {
-              final productInstance = AllProduct.fromJson(product);
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (builder) =>
-                      ProductDetails(product: productInstance),
-                ),
-              );
-              // Navigate to product details screen with product['_id']
-            },
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildBodyContent() {

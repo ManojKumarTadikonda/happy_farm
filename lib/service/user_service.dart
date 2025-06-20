@@ -1,13 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path/path.dart';
 
 class UserService {
   final String _baseUrl = 'https://happyfarm-server.onrender.com/api/user';
-  
 
-
-  //user sign in 
+  //user sign in
   Future<Map<String, dynamic>?> signIn({
     required String phone,
     required String password,
@@ -34,7 +34,6 @@ class UserService {
       return {'error': 'An error occurred: $e'};
     }
   }
-
 
   //Sign Up user
   Future<Map<String, dynamic>?> signUp({
@@ -70,18 +69,123 @@ class UserService {
       return {'error': 'An error occurred: $e'};
     }
   }
-  
-  
+
+  //upload Profile
+  Future<List<String>> uploadProfileImage(File imageFile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null || token.isEmpty) {
+        throw Exception('Authorization token not found.');
+      }
+
+      final url = Uri.parse('$_baseUrl/upload'); // adjust if endpoint differs
+      final request = http.MultipartRequest('POST', url);
+      request.headers['Authorization'] = 'Bearer $token';
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'images', // must match multer field name in backend
+          imageFile.path,
+          filename: basename(imageFile.path),
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+
+        if (data['success'] == true && data['images'] != null) {
+          final List<String> imageUrls =
+              (data['images'] as List).map((e) => e.toString()).toList();
+          return imageUrls;
+        } else {
+          throw Exception('Unexpected response format');
+        }
+      } else {
+        print('Upload failed: ${response.statusCode}, ${response.body}');
+        throw Exception('Failed to upload profile image');
+      }
+    } catch (e) {
+      print('Error uploading profile image: $e');
+      rethrow;
+    }
+  }
+
+  //delete profile image
+  Future<bool> deleteImage(String imageUrl) async {
+    final url = Uri.parse('$_baseUrl/delete');
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', 
+        },
+        body: jsonEncode({'imageUrl': imageUrl}),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Failed to delete image: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error deleting image: $e");
+      return false;
+    }
+  }
+  //edit profile image 
+  Future<String?> editImage({
+    required String oldImageUrl,
+    required File newImageFile,
+  }) async {
+    final url = Uri.parse('$_baseUrl/edit');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      var request = http.MultipartRequest('POST', url);
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['oldImageUrl'] = oldImageUrl;
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          newImageFile.path,
+          filename: basename(newImageFile.path),
+        ),
+      );
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+        var jsonResponse = json.decode(response.body);
+        return jsonResponse['newImageUrl'];
+      } else {
+        print('Failed to edit image: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error editing image: $e');
+      return null;
+    }
+  }
+
   //fetch User Details
   Future<Map<String, dynamic>?> fetchUserDetails(String userId) async {
-     final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
     final response = await http.get(
       Uri.parse('$_baseUrl/$userId'),
       headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
     );
 
     if (response.statusCode == 200) {
@@ -91,7 +195,6 @@ class UserService {
       return null;
     }
   }
-
 
   //update User Info
   Future<Map<String, dynamic>> updatePersonalInfo({
@@ -124,7 +227,8 @@ class UserService {
         return jsonDecode(response.body);
       } else {
         return {
-          'error': 'Failed to update details. ${jsonDecode(response.body)['message'] ?? ''}'
+          'error':
+              'Failed to update details. ${jsonDecode(response.body)['message'] ?? ''}'
         };
       }
     } catch (e) {
@@ -134,19 +238,19 @@ class UserService {
 
   //Forgot Password
   Future<bool> changeForgotPassword(String email, String newPassword) async {
-  final url = Uri.parse('$_baseUrl/forgotPassword/changePassword');
+    final url = Uri.parse('$_baseUrl/forgotPassword/changePassword');
 
-  try {
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'newPass': newPassword}),
-    );
-    return response.statusCode == 200;
-  } catch (e) {
-    return false;
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'newPass': newPassword}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
-}
 
   //Update Password
   Future<Map<String, dynamic>> changePassword({
@@ -185,7 +289,8 @@ class UserService {
 
       final responseData = jsonDecode(response.body);
       return {
-        'success': response.statusCode == 200 && responseData['success'] == true,
+        'success':
+            response.statusCode == 200 && responseData['success'] == true,
         'message': responseData['message'] ?? 'Password change failed.',
       };
     } catch (e) {
@@ -195,7 +300,4 @@ class UserService {
       };
     }
   }
-  
 }
-
-

@@ -71,10 +71,29 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Order Cancelled: ${result?['message']}')),
       );
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen(selectedIndex: 3,)));
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => MainScreen(
+                    selectedIndex: 3,
+                  )));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cancel Failed: ${result?['message']}')),
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Cancel Failed'),
+            content: Text(result?['message'] ?? 'Something went wrong'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close dialog
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
       );
     }
   }
@@ -207,7 +226,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                         context); // Close the bottom sheet
                                     showLoaderDialog(
                                         context); // Show loading spinner
-                                        cancelOrderHandler(
+                                    cancelOrderHandler(
                                         context, orderData!['_id']);
                                     Navigator.pop(
                                         context); // Close the loader dialog after API completes
@@ -302,7 +321,12 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                 ],
                               ),
                               Divider(),
-                              buildInfoRow("Order ID", orderData!['_id']),
+                              buildInfoRow(
+                                  "Product Name",
+                                  (orderData!['products'] as List)
+                                      .map((product) =>
+                                          product['productDetails']['name'])
+                                      .join(', ')),
                               // 👉 Status with color
                               buildInfoRow(
                                 "Status",

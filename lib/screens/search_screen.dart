@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:happy_farm/screens/productdetails_screen.dart';
 import 'package:happy_farm/service/product_service.dart';
@@ -18,11 +19,64 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>> _searchResults = [];
   List<String> _searchHistory = [];
   bool isLoading = false;
+  
+  // Timer for debouncing API calls
+  Timer? _searchTimer;
+  
+  // Minimum characters before triggering search
+  static const int minSearchLength = 1;
+  
+  // Delay before making API call (in milliseconds)
+  static const int searchDelay = 500;
 
   @override
   void initState() {
     super.initState();
     _loadSearchHistory();
+    
+    // Listen to text changes
+    _controller.addListener(_onSearchTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    _controller.removeListener(_onSearchTextChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onSearchTextChanged() {
+    final query = _controller.text.trim();
+    
+    // Cancel any existing timer
+    _searchTimer?.cancel();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        isLoading = false;
+      });
+      return;
+    }
+    
+    if (query.length < minSearchLength) {
+      setState(() {
+        _searchResults = [];
+        isLoading = false;
+      });
+      return;
+    }
+    
+    // Show loading immediately
+    setState(() {
+      isLoading = true;
+    });
+    
+    // Set up a new timer
+    _searchTimer = Timer(Duration(milliseconds: searchDelay), () {
+      _performSearch(query);
+    });
   }
 
   Future<void> _loadSearchHistory() async {
@@ -32,11 +86,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _addToHistory(String query) async {
-    if (query.isEmpty) return;
+    if (query.isEmpty || query.length < minSearchLength) return;
     final prefs = await SharedPreferences.getInstance();
     if (!_searchHistory.contains(query)) {
       _searchHistory.insert(0, query);
+      // Keep only last 10 searches
+      if (_searchHistory.length > 10) {
+        _searchHistory = _searchHistory.take(10).toList();
+      }
       await prefs.setStringList('searchHistory', _searchHistory);
+      setState(() {});
     }
   }
 
@@ -48,27 +107,44 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _performSearch(String query) async {
-    if (query.trim().isEmpty) return;
-
-    setState(() {
-      isLoading = true;
-      _searchResults = [];
-    });
+    if (query.trim().isEmpty || query.length < minSearchLength) {
+      setState(() {
+        isLoading = false;
+        _searchResults = [];
+      });
+      return;
+    }
 
     try {
       final results = await _searchService.searchProducts(query: query);
-      setState(() {
-        _searchResults = results;
-      });
-      await _addToHistory(query);
+      
+      // Only update if this is still the current search query
+      if (_controller.text.trim() == query) {
+        setState(() {
+          _searchResults = results;
+          isLoading = false;
+        });
+        
+        // Add to history only for successful searches with results
+        if (results.isNotEmpty) {
+          await _addToHistory(query);
+        }
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Search failed: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+      // Only show error if this is still the current search query
+      if (_controller.text.trim() == query) {
+        setState(() {
+          isLoading = false;
+          _searchResults = [];
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Search failed: ${e.toString()}'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -109,10 +185,9 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       child: TextField(
         controller: _controller,
-        onSubmitted: _performSearch,
         style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
-          hintText: 'Search for products...',
+          hintText: 'Search for products..(min ${minSearchLength} chars)',
           hintStyle: TextStyle(
             color: Colors.grey[600],
             fontSize: 16,
@@ -143,8 +218,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       icon: Icon(Icons.clear, color: Colors.grey[600]),
                       onPressed: () {
                         _controller.clear();
+                        _searchTimer?.cancel();
                         setState(() {
                           _searchResults = [];
+                          isLoading = false;
                         });
                       },
                     )
@@ -153,9 +230,6 @@ class _SearchScreenState extends State<SearchScreen> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
-        onChanged: (value) {
-          setState(() {});
-        },
       ),
     );
   }
@@ -247,7 +321,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         onTap: () {
                           _controller.text = query;
-                          _performSearch(query);
+                          // This will trigger the search automatically
                         },
                       ),
                     );
@@ -259,36 +333,99 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchResults() {
-    if (_searchResults.isEmpty && !isLoading)
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 80,
-              color: Colors.grey[300],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Start typing to search",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+    if (_searchResults.isEmpty && !isLoading) {
+      if (_controller.text.trim().isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 80,
+                color: Colors.grey[300],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Find products from our farm",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
+              const SizedBox(height: 16),
+              Text(
+                "Start typing to search",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
-        ),
-      );
+              const SizedBox(height: 8),
+              Text(
+                "Find products from our farm",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        );
+      } else if (_controller.text.trim().length < minSearchLength) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.edit,
+                size: 80,
+                color: Colors.grey[300],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Keep typing...",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Need at least ${minSearchLength} characters to search",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 80,
+                color: Colors.grey[300],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "No products found",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Try searching with different keywords",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -438,7 +575,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         ],
                       ),
                     )
-                  : _searchResults.isNotEmpty
+                  : _searchResults.isNotEmpty || _controller.text.isNotEmpty
                       ? _buildSearchResults()
                       : _buildHistoryList(),
             ),

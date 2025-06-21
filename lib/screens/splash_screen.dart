@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:happy_farm/main.dart';
+import 'package:happy_farm/screens/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:happy_farm/models/user_provider.dart';
+import 'package:happy_farm/service/user_service.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,10 +39,38 @@ class _SplashScreenState extends State<SplashScreen>
 
     _scaleController.forward();
 
-    Future.delayed(const Duration(seconds: 5), () {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const MainScreen()));
+    Future.delayed(const Duration(seconds: 5), () async {
+      await _navigateBasedOnLogin();
     });
+  }
+
+  Future<void> _navigateBasedOnLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final userId = prefs.getString('userId');
+
+    if (userId != null) {
+      final userData = await UserService().fetchUserDetails(userId);
+      if (userData != null) {
+        Provider.of<UserProvider>(context, listen: false).setUser(
+          username: userData['name'] ?? 'No Name',
+          email: userData['email'] ?? 'No Email',
+          phoneNumber: userData['phone'] ?? 'No Phone',
+        );
+      }
+    }
+
+    if (token != null && userId != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   @override

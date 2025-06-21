@@ -107,7 +107,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   oldImageUrl != null &&
                                   oldImageUrl.isNotEmpty) {
                                 final newUrl = await userService.editImage(
-                                  oldImageUrl: oldImageUrl,
                                   newImageFile: file,
                                 );
 
@@ -122,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                                 if (newUrl != null) {
                                   setState(() {
-                                    profileImage = newUrl as String;
+                                    profileImage = newUrl;
                                   });
                                 }
                               }
@@ -244,7 +243,7 @@ void _showImageDialog() {
                   Text(
                     profileImage.isNotEmpty
                         ? 'Profile Image'
-                        : 'No Image Uploaded',
+                        : 'No Profile Uploaded!',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -263,7 +262,7 @@ void _showImageDialog() {
                               onPressed: () async {
                                 final userService = UserService();
                                 final success = await userService
-                                    .deleteImage(profileImage);
+                                    .deleteImage();
 
                                 if (success) {
                                   setState(() {
@@ -325,7 +324,7 @@ void _showImageDialog() {
                             _pickCropAndUploadImage(isEdit: false);
                           },
                           icon: const Icon(Icons.upload, color: Colors.white),
-                          label: const Text("Upload Image"),
+                          label: const Text("Upload Profile"),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             padding: const EdgeInsets.symmetric(

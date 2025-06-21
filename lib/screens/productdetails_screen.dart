@@ -107,12 +107,11 @@ class _ProductDetailsState extends State<ProductDetails> {
     try {
       final wishlist = await WishlistService.fetchWishlist();
 
-      final matchedItem = wishlist.firstWhere(
+      wishlist.firstWhere(
         (item) => item['productId']['_id'] == getProductId(),
         orElse: () => <String, dynamic>{}, // return an empty map
       );
 
-      final found = matchedItem.isNotEmpty;
     } catch (e) {
       print('Error checking wishlist status: $e');
     }
@@ -187,13 +186,12 @@ class _ProductDetailsState extends State<ProductDetails> {
   }
 
   Future<void> addWishList() async {
-    final productId = getProductId();
+    getProductId();
 
     try {
       setState(() {
         isLoadingWish = true;
       });
-      final String id = await WishlistService.addToMyList(productId);
       setState(() {
         isWish = true;
       });

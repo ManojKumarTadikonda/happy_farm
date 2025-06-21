@@ -71,7 +71,7 @@ class UserService {
   }
 
   //upload Profile
-  Future<List<String>> uploadProfileImage(File imageFile) async {
+  Future<String?> uploadProfileImage(File imageFile) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -80,13 +80,13 @@ class UserService {
         throw Exception('Authorization token not found.');
       }
 
-      final url = Uri.parse('$_baseUrl/upload'); // adjust if endpoint differs
+      final url = Uri.parse('$_baseUrl/upload-image'); // ✅ Correct endpoint
       final request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $token';
 
       request.files.add(
         await http.MultipartFile.fromPath(
-          'images', // must match multer field name in backend
+          'image', // ✅ Correct field name
           imageFile.path,
           filename: basename(imageFile.path),
         ),
@@ -98,12 +98,11 @@ class UserService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
 
-        if (data['success'] == true && data['images'] != null) {
-          final List<String> imageUrls =
-              (data['images'] as List).map((e) => e.toString()).toList();
-          return imageUrls;
+        if (data['success'] == true && data['imageUrl'] != null) {
+          // ✅ Correct field
+          return data['imageUrl'];
         } else {
-          throw Exception('Unexpected response format');
+          throw Exception('Unexpected response format: $data');
         }
       } else {
         print('Upload failed: ${response.statusCode}, ${response.body}');
@@ -116,19 +115,18 @@ class UserService {
   }
 
   //delete profile image
-  Future<bool> deleteImage(String imageUrl) async {
-    final url = Uri.parse('$_baseUrl/delete');
+  Future<bool> deleteImage() async {
+    final url = Uri.parse('$_baseUrl/delete-image');
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      final response = await http.post(
+
+      final response = await http.delete(
         url,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', 
+          'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({'imageUrl': imageUrl}),
       );
 
       if (response.statusCode == 200) {
@@ -142,30 +140,34 @@ class UserService {
       return false;
     }
   }
-  //edit profile image 
+
+//edit Image
   Future<String?> editImage({
-    required String oldImageUrl,
     required File newImageFile,
   }) async {
-    final url = Uri.parse('$_baseUrl/edit');
+    final url = Uri.parse('$_baseUrl/edit-image');
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
-      var request = http.MultipartRequest('POST', url);
+
+      var request = http.MultipartRequest('PUT', url);
       request.headers['Authorization'] = 'Bearer $token';
-      request.fields['oldImageUrl'] = oldImageUrl;
+
       request.files.add(
         await http.MultipartFile.fromPath(
-          'file',
+          'image',
           newImageFile.path,
           filename: basename(newImageFile.path),
         ),
       );
+
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
+
       if (response.statusCode == 200) {
         var jsonResponse = json.decode(response.body);
-        return jsonResponse['newImageUrl'];
+        return jsonResponse['imageUrl'];
       } else {
         print('Failed to edit image: ${response.body}');
         return null;

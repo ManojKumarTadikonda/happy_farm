@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
       title: 'Sabba Farm',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const SplashScreen(), // Start with Splash
+      home: const SplashScreen(), 
     );
   }
 }
@@ -59,7 +59,6 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
-  String? _userId;
   bool _isCheckingLogin = true;
   bool _isLoggedIn = false;
 
@@ -95,7 +94,6 @@ class _MainScreenState extends State<MainScreen> {
 
     setState(() {
       _isLoggedIn = token != null && userId != null;
-      _userId = userId;
       _isCheckingLogin = false;
     });
   }

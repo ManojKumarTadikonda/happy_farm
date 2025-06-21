@@ -20,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final UserService authService = UserService();
 
   bool _isLoading = false;
-  String? _errorMessage;
   bool _obscurePassword = true;
 
   final _formKey = GlobalKey<FormState>();
@@ -28,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     final result = await authService.signIn(
@@ -54,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       setState(() {
-        _errorMessage = result?['error'] ?? 'Something went wrong';
       });
     }
 

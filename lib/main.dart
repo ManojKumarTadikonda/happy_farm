@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:happy_farm/screens/home_screen.dart';
 import 'utils/app_theme.dart';
-
+import 'package:location/location.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
@@ -68,7 +68,38 @@ class _MainScreenState extends State<MainScreen> {
     _selectedIndex = widget.selectedIndex;
     _checkLoginStatus();
     getUser();
+    _requestLocationPermission(); 
   }
+
+  Future<void> _requestLocationPermission() async {
+  Location location = Location();
+
+  bool serviceEnabled;
+  PermissionStatus permissionGranted;
+
+  // Check if service is enabled
+  serviceEnabled = await location.serviceEnabled();
+  if (!serviceEnabled) {
+    serviceEnabled = await location.requestService();
+    if (!serviceEnabled) {
+      print('Location service is disabled.');
+      return;
+    }
+  }
+
+  // Request permission
+  permissionGranted = await location.hasPermission();
+  if (permissionGranted == PermissionStatus.denied) {
+    permissionGranted = await location.requestPermission();
+    if (permissionGranted != PermissionStatus.granted) {
+      print('Location permission not granted.');
+      return;
+    }
+  }
+
+  print('Location permission granted.');
+}
+
 
   Future<void> getUser() async {
     final prefs = await SharedPreferences.getInstance();

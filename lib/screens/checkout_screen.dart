@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/cart_model.dart';
 import 'package:happy_farm/screens/addAddressScreen.dart';
@@ -6,7 +5,6 @@ import 'package:happy_farm/screens/ordersuccesspage.dart';
 import 'package:happy_farm/service/cart_service.dart';
 import 'package:happy_farm/service/address_service.dart';
 import 'package:happy_farm/service/order_service.dart';
-import 'package:happy_farm/service/user_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,9 +24,7 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _orderService = OrderService();
-  final _authService = UserService();
   final _addressService = AddressService();
 
   late Razorpay _razorpay;
@@ -207,184 +203,187 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildAddressSelection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        "SELECT DELIVERY ADDRESS",
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-          letterSpacing: 0.5,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "SELECT DELIVERY ADDRESS",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            letterSpacing: 0.5,
+          ),
         ),
-      ),
-      const SizedBox(height: 18),
-      _addresses.isEmpty
-          ? const Text('No saved addresses. Please add a new address.')
-          : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _addresses.length,
-              itemBuilder: (context, index) {
-                final address = _addresses[index];
-                final isSelected = _selectedAddress == address;
+        const SizedBox(height: 18),
+        _addresses.isEmpty
+            ? const Text('No saved addresses. Please add a new address.')
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _addresses.length,
+                itemBuilder: (context, index) {
+                  final address = _addresses[index];
+                  final isSelected = _selectedAddress == address;
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedAddress = address;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Colors.green.shade50
-                          : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedAddress = address;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.green.shade700
-                            : Colors.grey.shade300,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
+                            ? Colors.green.shade50
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? Colors.green.shade700
+                              : Colors.grey.shade300,
+                          width: isSelected ? 2 : 1,
                         ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_circle_rounded
-                                    : Icons.radio_button_unchecked,
-                                color: isSelected
-                                    ? Colors.green.shade700
-                                    : Colors.grey.shade500,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      address['name'] ?? '',
-                                      style: const TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${address['address']}, ${address['city']}, ${address['state']} - ${address['pincode']}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                    if ((address['landmark'] ?? '').isNotEmpty)
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : Icons.radio_button_unchecked,
+                                  color: isSelected
+                                      ? Colors.green.shade700
+                                      : Colors.grey.shade500,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
                                       Text(
-                                        'Landmark: ${address['landmark']}',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey.shade600,
+                                        address['name'] ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
                                         ),
                                       ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${address['phoneNumber']}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black87,
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${address['address']}, ${address['city']}, ${address['state']} - ${address['pincode']}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade700,
+                                          height: 1.4,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      ' ${address['email']}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black87,
+                                      if ((address['landmark'] ?? '')
+                                          .isNotEmpty)
+                                        Text(
+                                          'Landmark: ${address['landmark']}',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${address['phoneNumber']}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.edit,
-                              color: Colors.grey.shade600,
-                              size: 22,
-                            ),
-                            onPressed: () async {
-                              // Open edit address screen
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AddAddressScreen(
-                                    existingAddress: address, // pass this
+                                      Text(
+                                        ' ${address['email']}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              );
-                              _fetchUserAddresses(); // reload after edit
-                            },
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.edit,
+                                color: Colors.grey.shade600,
+                                size: 22,
+                              ),
+                              onPressed: () async {
+                                // Open edit address screen
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AddAddressScreen(
+                                      existingAddress: address, // pass this
+                                    ),
+                                  ),
+                                );
+                                _fetchUserAddresses(); // reload after edit
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-      const SizedBox(height: 16),
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AddAddressScreen(existingAddress: null,),
+                  );
+                },
               ),
-            );
-            _fetchUserAddresses();
-          },
-          icon: const Icon(Icons.add_location_alt),
-          label: const Text(
-            "Add New Address",
-            style: TextStyle(fontSize: 16),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green.shade700,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddAddressScreen(
+                    existingAddress: null,
+                  ),
+                ),
+              );
+              _fetchUserAddresses();
+            },
+            icon: const Icon(Icons.add_location_alt),
+            label: const Text(
+              "Add New Address",
+              style: TextStyle(fontSize: 16),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
-
+      ],
+    );
+  }
 
   Widget _buildEmptyAddress() {
     return Center(
@@ -401,7 +400,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const AddAddressScreen(existingAddress: null,)),
+                    builder: (context) => const AddAddressScreen(
+                          existingAddress: null,
+                        )),
               );
               _fetchUserAddresses();
             },

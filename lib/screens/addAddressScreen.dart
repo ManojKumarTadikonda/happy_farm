@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/service/address_service.dart';
+import 'package:location/location.dart' as loc;
+import 'package:geocoding/geocoding.dart';
 
 class AddAddressScreen extends StatefulWidget {
   final Map<String, dynamic>? existingAddress;
@@ -93,48 +95,80 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       );
     }
   }
+
   Future<void> _updateAddress() async {
-  if (_formKey.currentState!.validate()) {
-    final addressService = AddressService();
+    if (_formKey.currentState!.validate()) {
+      final addressService = AddressService();
 
-    final result = await addressService.updateAddress(
-      addressId: widget.existingAddress!['_id'],  
-      name: _nameController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
-      email: _emailController.text.trim(),
-      address:
-          "${_address1Controller.text.trim()}, ${_address2Controller.text.trim()}",
-      landmark: _landmarkController.text.trim(),
-      city: _cityController.text.trim(),
-      state: _stateController.text.trim(),
-      pincode: _pincodeController.text.trim(),
-      addressType: _addressType,
-      isDefault: _isDefault,
-    );
-
-    print('update result: $result');
-    if (result != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Address updated successfully!')),
+      final result = await addressService.updateAddress(
+        addressId: widget.existingAddress!['_id'],
+        name: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+        address:
+            "${_address1Controller.text.trim()}, ${_address2Controller.text.trim()}",
+        landmark: _landmarkController.text.trim(),
+        city: _cityController.text.trim(),
+        state: _stateController.text.trim(),
+        pincode: _pincodeController.text.trim(),
+        addressType: _addressType,
+        isDefault: _isDefault,
       );
-      Navigator.pop(context);
+
+      print('update result: $result');
+      if (result != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Address updated successfully!')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update address')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update address')),
+        const SnackBar(content: Text('Please fill all required fields')),
       );
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please fill all required fields')),
-    );
   }
-}
 
+  Future<void> _getCurrentLocation() async {
+    loc.Location location = loc.Location();
+    loc.LocationData locationData = await location.getLocation();
 
-  void _useMyLocation() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fetching current location...')),
-    );
+    double? latitude = locationData.latitude;
+    double? longitude = locationData.longitude;
+
+    if (latitude != null && longitude != null) {
+      await _getAndSetAddressFromLatLng(latitude, longitude);
+      print('Latitude: $latitude, Longitude: $longitude');
+    } else {
+      print('Could not get location');
+    }
+  }
+
+  Future<void> _getAndSetAddressFromLatLng(
+      double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(latitude, longitude);
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+
+        setState(() {
+          _address1Controller.text = place.street ?? '';
+          _address2Controller.text = place.subLocality ?? '';
+          _cityController.text = place.locality ?? '';
+          _stateController.text = place.administrativeArea ?? '';
+          _pincodeController.text = place.postalCode ?? '';
+          _landmarkController.text = place.subThoroughfare ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error getting address from lat/lng: $e');
+    }
   }
 
   @override
@@ -204,7 +238,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _useMyLocation,
+                      onPressed: _getCurrentLocation,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey.shade200,
                         foregroundColor: Colors.black87,

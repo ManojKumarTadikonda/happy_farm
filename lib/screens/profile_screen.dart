@@ -49,8 +49,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _userDetails = userData;
         // Get first image if available
         profileImage =
-            (userData['images'] != null && userData['images'].isNotEmpty)
-                ? userData['images'][0]
+            (userData['image'] != null && userData['image'].isNotEmpty)
+                ? userData['image']
                 : '';
         _isLoading = false;
       });
@@ -139,7 +139,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          Navigator.of(dialogContext).pop();
+                                          Navigator.of(dialogContext)
+                                              .pop(); // Close the dialog first
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  MainScreen(selectedIndex: 4),
+                                            ),
+                                          );
                                         },
                                         child: const Text('OK'),
                                       ),
@@ -160,7 +168,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          Navigator.of(dialogContext).pop();
+                                           Navigator.of(dialogContext)
+                                              .pop(); 
+                                          Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MainScreen(
+                                                        selectedIndex: 4,
+                                                      )));
                                         },
                                         child: const Text('OK'),
                                       ),
@@ -212,153 +228,160 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-void _showImageDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 10),
+  void _showImageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Stack(
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
 
-                  // Enlarged Profile Image
-                  CircleAvatar(
-                    radius: 80, // Increased size
-                    backgroundColor: Colors.grey.shade200,
-                    backgroundImage: profileImage.isNotEmpty
-                        ? NetworkImage(profileImage)
-                        : const AssetImage('assets/images/profile.png')
-                            as ImageProvider,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Text(
-                    profileImage.isNotEmpty
-                        ? 'Profile Image'
-                        : 'No Profile Uploaded!',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
+                    // Enlarged Profile Image
+                    CircleAvatar(
+                      radius: 80, // Increased size
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: profileImage.isNotEmpty
+                          ? NetworkImage(profileImage)
+                          : const AssetImage('assets/images/profile.png')
+                              as ImageProvider,
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                  profileImage.isNotEmpty
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // Delete Button
-                            ElevatedButton.icon(
-                              onPressed: () async {
-                                final userService = UserService();
-                                final success = await userService
-                                    .deleteImage();
+                    Text(
+                      profileImage.isNotEmpty
+                          ? 'Profile Image'
+                          : 'No Profile Uploaded!',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
 
-                                if (success) {
-                                  setState(() {
-                                    profileImage = '';
-                                  });
-                                  Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Profile image deleted successfully'),
-                                    ),
-                                  );
-                                } else {
-                                  Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Failed to delete profile image'),
-                                    ),
-                                  );
-                                }
-                              },
-                              icon:
-                                  const Icon(Icons.delete, color: Colors.white),
-                              label: const Text("Remove"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 24),
+
+                    profileImage.isNotEmpty
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // Delete Button
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final userService = UserService();
+                                  final success =
+                                      await userService.deleteImage();
+
+                                  if (success) {
+                                    setState(() {
+                                      profileImage = '';
+                                    });
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => MainScreen(
+                                                  selectedIndex: 4,
+                                                )));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Profile image deleted successfully'),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.of(context).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Failed to delete profile image'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.white),
+                                label: const Text("Remove"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
-                            ),
 
-                            // Edit Button
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _pickCropAndUploadImage(isEdit: true);
-                              },
-                              icon:
-                                  const Icon(Icons.edit, color: Colors.white),
-                              label: const Text("Edit"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 10, horizontal: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              // Edit Button
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _pickCropAndUploadImage(isEdit: true);
+                                },
+                                icon:
+                                    const Icon(Icons.edit, color: Colors.white),
+                                label: const Text("Edit"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueAccent,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        )
-                      : ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _pickCropAndUploadImage(isEdit: false);
-                          },
-                          icon: const Icon(Icons.upload, color: Colors.white),
-                          label: const Text("Upload Profile"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12, horizontal: 24),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            ],
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _pickCropAndUploadImage(isEdit: false);
+                            },
+                            icon: const Icon(Icons.upload, color: Colors.white),
+                            label: const Text("Upload Profile"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
-                        ),
-                ],
-              ),
-            ),
-
-            Positioned(
-              top: 8,
-              right: 8,
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).pop();
-                },
-                child: const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.black54,
-                  child: Icon(Icons.close, color: Colors.white, size: 18),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
- @override
+              Positioned(
+                top: 8,
+                right: 8,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.black54,
+                    child: Icon(Icons.close, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),

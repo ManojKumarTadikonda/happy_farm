@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:happy_farm/main.dart';
 import 'package:happy_farm/models/product_model.dart';
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/screens/cart_screen.dart';
 import 'package:happy_farm/service/cart_service.dart';
 import 'package:happy_farm/service/review_service.dart';
 import 'package:happy_farm/service/whislist_service.dart';
-import 'package:happy_farm/widgets/snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -118,6 +116,44 @@ class _ProductDetailsState extends State<ProductDetails> {
     } catch (e) {
       print('Error checking wishlist status: $e');
     }
+  }
+
+  List<Widget> getFormattedDescriptionWidgets(String? description) {
+    if (description == null || description.trim().isEmpty) {
+      return [
+        const Text(
+          "No description available.",
+          style: TextStyle(fontSize: 15, color: Colors.black87),
+        ),
+      ];
+    }
+
+    // Split description by new lines
+    List<String> lines = description.split('\n');
+
+    return lines.map((line) {
+      line = line.trim();
+      if (line.isEmpty) {
+        return const SizedBox(height: 8); // Add spacing for empty lines
+      }
+
+      // If line looks like a heading (contains "features", "CROPS", "TARGET", etc.), make it bold
+      bool isHeading = RegExp(r'^(features|CROPS|TARGET|DOSAGE|benefits)',
+              caseSensitive: false)
+          .hasMatch(line);
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6.0),
+        child: Text(
+          line,
+          style: TextStyle(
+            fontSize: 15,
+            color: Colors.black87,
+            fontWeight: isHeading ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      );
+    }).toList();
   }
 
   Future<void> fetchReviews() async {
@@ -624,12 +660,52 @@ class _ProductDetailsState extends State<ProductDetails> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    getProductDescription()?.trim().isNotEmpty == true
-                        ? getProductDescription()!
-                        : "No description available.",
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
-                  ),
+                  child: getProductDescription()?.trim().isNotEmpty == true
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: getProductDescription()!
+                              .split('\n')
+                              .where((line) => line.trim().isNotEmpty)
+                              .map((line) {
+                            // For headings like Features & Benefits
+                            if (line.toLowerCase().contains("features") ||
+                                line.toLowerCase().contains("benefits") ||
+                                line.toLowerCase().contains("crops") ||
+                                line.toLowerCase().contains("target pest") ||
+                                line.toLowerCase().contains("dosage") ||
+                                line.toLowerCase().contains("mode of action") ||
+                                line.toLowerCase().contains("application")) {
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 12.0, bottom: 6),
+                                child: Text(
+                                  line.trim(),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 4.0),
+                                child: Text(
+                                  line.trim(),
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.black87,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              );
+                            }
+                          }).toList(),
+                        )
+                      : const Text(
+                          "No description available.",
+                          style: TextStyle(fontSize: 15, color: Colors.black87),
+                        ),
                 ),
               ],
             ),

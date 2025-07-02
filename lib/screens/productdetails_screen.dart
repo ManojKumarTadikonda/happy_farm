@@ -34,14 +34,15 @@ class _ProductDetailsState extends State<ProductDetails> {
   bool isLoadingCart = false;
   String? userId;
   @override
-  void initState() {
-    super.initState();
-    fetchReviews();
-    isWish = getIsWishList();
-    isCart = getIsCart();
-    checkWishlistStatus();
-    _loadUser();
-  }
+void initState() {
+  super.initState();
+  fetchReviews();
+  checkWishlistStatus(); // This alone is enough
+  isCart = getIsCart();
+  _loadUser();
+}
+
+
 
   Future<void> _loadUser() async {
     final prefs = await SharedPreferences.getInstance();
@@ -103,19 +104,23 @@ class _ProductDetailsState extends State<ProductDetails> {
     return widget.product.prices;
   }
 
-  Future<void> checkWishlistStatus() async {
-    try {
-      final wishlist = await WishlistService.fetchWishlist();
+Future<void> checkWishlistStatus() async {
+  try {
+    final wishlist = await WishlistService.fetchWishlist();
 
-      wishlist.firstWhere(
-        (item) => item['productId']['_id'] == getProductId(),
-        orElse: () => <String, dynamic>{}, // return an empty map
-      );
+    final isProductInWishlist = wishlist.any(
+      (item) => item['productId']['_id'] == getProductId(),
+    );
 
-    } catch (e) {
-      print('Error checking wishlist status: $e');
-    }
+    setState(() {
+      isWish = isProductInWishlist;
+    });
+  } catch (e) {
+    print('Error checking wishlist status: $e');
   }
+}
+
+
 
   List<Widget> getFormattedDescriptionWidgets(String? description) {
     if (description == null || description.trim().isEmpty) {
@@ -186,12 +191,13 @@ class _ProductDetailsState extends State<ProductDetails> {
   }
 
   Future<void> addWishList() async {
-    getProductId();
-
     try {
       setState(() {
         isLoadingWish = true;
       });
+      await WishlistService.addToMyList(
+        getProductId(),
+      );
       setState(() {
         isWish = true;
       });

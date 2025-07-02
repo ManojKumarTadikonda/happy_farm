@@ -440,7 +440,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                     selectedCatId = category.id;
                                     selectedCatName = category.name;
                                   });
-                                  _fetchProductsByCategory(category.name);
                                 },
                                 child: Container(
                                   width: 100,

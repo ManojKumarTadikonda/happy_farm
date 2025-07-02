@@ -141,6 +141,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         onPressed: () {
                                           Navigator.of(dialogContext)
                                               .pop(); // Close the dialog first
+                                          _loadUserDetails();
+                                          // Navigate to MainScreen and refresh the Profile tab (index 4)
                                           Navigator.pushReplacement(
                                             context,
                                             MaterialPageRoute(
@@ -168,8 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                           Navigator.of(dialogContext)
-                                              .pop(); 
+                                          Navigator.of(dialogContext).pop();
                                           Navigator.pushReplacement(
                                               context,
                                               MaterialPageRoute(
@@ -300,6 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     );
                                   } else {
                                     Navigator.of(context).pop();
+                                    _loadUserDetails();
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(

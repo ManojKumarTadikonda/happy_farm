@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/cart_model.dart';
-import 'package:happy_farm/screens/addAddressScreen.dart';
 import 'package:happy_farm/screens/checkout_screen.dart';
-import 'package:happy_farm/screens/productdetails_screen.dart';
+// import 'package:happy_farm/screens/productdetails_screen.dart';
 import 'package:happy_farm/service/cart_service.dart';
 import 'package:lottie/lottie.dart';
 
@@ -40,10 +39,27 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  int _calculateTotal() {
-  return _cartItems.fold(0, (sum, item) => sum + item.subTotal.toInt());
-}
+  void _showLimitDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text("OK"),
+            )
+          ],
+        );
+      },
+    );
+  }
 
+  int _calculateTotal() {
+    return _cartItems.fold(0, (sum, item) => sum + item.subTotal.toInt());
+  }
 
   @override
   @override
@@ -103,136 +119,135 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-Widget _buildCartItem(CartItem item) {
-  int itemIndex = _cartItems.indexOf(item);
-  int countInStock = item.product.prices.first.countInStock;
-  double actualPrice = item.product.prices.first.actualPrice;
+  Widget _buildCartItem(CartItem item) {
+    int itemIndex = _cartItems.indexOf(item);
+    int countInStock = item.product.prices.first.countInStock;
+    double actualPrice = item.product.prices.first.actualPrice;
 
-  return GestureDetector(
-    onTap: () {
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ProductDetails(product: item.product),
-      ));
-    },
-    child: Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade300),
-      ),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                item.product.images.first,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.product.name,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Rs.${actualPrice.toStringAsFixed(2)}",
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Subtotal: Rs.${item.subTotal.toStringAsFixed(2)}",
-                    style:
-                        const TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              children: [
-                IconButton(
-                  icon:
-                      const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () async {
-                    bool success =
-                        await CartService.deleteCartItem(item.id);
-                    if (success) {
-                      setState(() {
-                        _cartItems.removeAt(itemIndex);
-                      });
-                    }
-                  },
+    return GestureDetector(
+      onTap: () {
+        // Navigator.of(context).push(MaterialPageRoute(
+        //   builder: (_) => ProductDetails(product: item.product),
+        // ));
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300),
+        ),
+        elevation: 0,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  item.product.images.first,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
                 ),
-                const SizedBox(height: 10),
-                Row(
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.remove_circle_outline,
-                        color: item.quantity == 1
-                            ? Colors.grey
-                            : Colors.deepOrange,
-                      ),
-                      onPressed: item.quantity == 1
-                          ? null
-                          : () {
-                              int newQty = item.quantity - 1;
-                              setState(() {
-                                _cartItems[itemIndex] = CartItem(
-                                  id: item.id,
-                                  priceId: item.priceId,
-                                  userId: item.userId,
-                                  product: item.product,
-                                  quantity: newQty,
-                                  subTotal: actualPrice * newQty,
-                                );
-                              });
-                            },
+                    Text(
+                      item.product.name,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600),
                     ),
-                    Text(item.quantity.toString()),
-                    IconButton(
-                      icon: Icon(
-                        Icons.add_circle_outline,
-                        color: item.quantity == countInStock
-                            ? Colors.grey
-                            : Colors.green,
-                      ),
-                      onPressed: item.quantity == countInStock
-                          ? null
-                          : () {
-                              int newQty = item.quantity + 1;
-                              setState(() {
-                                _cartItems[itemIndex] = CartItem(
-                                  id: item.id,
-                                  priceId: item.priceId,
-                                  userId: item.userId,
-                                  product: item.product,
-                                  quantity: newQty,
-                                  subTotal: actualPrice * newQty,
-                                );
-                              });
-                            },
+                    const SizedBox(height: 4),
+                    Text(
+                      "₹${actualPrice.toStringAsFixed(2)}",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Subtotal: ₹${item.subTotal.toStringAsFixed(2)}",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ],
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: () async {
+                      bool success = await CartService.deleteCartItem(item.id);
+                      if (success) {
+                        setState(() {
+                          _cartItems.removeAt(itemIndex);
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: item.quantity == 1
+                            ? Colors.grey
+                            : Colors.deepOrange,
+                        onPressed: () {
+                          if (item.quantity == 1) {
+                            _showLimitDialog(context, "Minimum limit reached",
+                                "Quantity can't be less than 1.");
+                          } else {
+                            int newQty = item.quantity - 1;
+                            setState(() {
+                              _cartItems[itemIndex] = CartItem(
+                                id: item.id,
+                                priceId: item.priceId,
+                                userId: item.userId,
+                                product: item.product,
+                                quantity: newQty,
+                                subTotal: actualPrice * newQty,
+                              );
+                            });
+                          }
+                        },
+                      ),
+                      Text(item.quantity.toString()),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: item.quantity == countInStock
+                            ? Colors.grey
+                            : Colors.green,
+                        onPressed: () {
+                          if (item.quantity == countInStock) {
+                            _showLimitDialog(context, "Stock limit reached",
+                                "Cannot add more than available stock.");
+                          } else {
+                            int newQty = item.quantity + 1;
+                            setState(() {
+                              _cartItems[itemIndex] = CartItem(
+                                id: item.id,
+                                priceId: item.priceId,
+                                userId: item.userId,
+                                product: item.product,
+                                quantity: newQty,
+                                subTotal: actualPrice * newQty,
+                              );
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildCouponField() {
     return Container(
@@ -272,7 +287,7 @@ Widget _buildCartItem(CartItem item) {
           const Divider(),
           _paymentRow("Total Amount", total, isBold: true),
           const SizedBox(height: 6),
-          const Text("You saved Rs.120 on this order",
+          const Text("You saved ₹120 on this order",
               style: TextStyle(color: Colors.green)),
         ],
       ),
@@ -292,7 +307,7 @@ Widget _buildCartItem(CartItem item) {
             ),
           ),
           Text(
-            value is String ? value : "Rs.$value",
+            value is String ? value : "₹$value",
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),
@@ -316,7 +331,7 @@ Widget _buildCartItem(CartItem item) {
           children: [
             RichText(
               text: TextSpan(
-                text: "Rs.$total\n",
+                text: "₹$total\n",
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.red,
@@ -332,8 +347,8 @@ Widget _buildCartItem(CartItem item) {
             ),
             ElevatedButton(
               onPressed: () {
-                final totalAmount =
-                    _cartItems.fold(0, (sum, item) => sum + item.subTotal.toInt());
+                final totalAmount = _cartItems.fold(
+                    0, (sum, item) => sum + item.subTotal.toInt());
                 Navigator.push(
                   context,
                   MaterialPageRoute(

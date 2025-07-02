@@ -235,7 +235,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              '\$$priceValue',
+                                              '₹$priceValue',
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,

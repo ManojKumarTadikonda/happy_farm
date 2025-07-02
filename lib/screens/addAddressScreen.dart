@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/service/address_service.dart';
 import 'package:location/location.dart' as loc;
 import 'package:geocoding/geocoding.dart';
+import 'package:provider/provider.dart';
+import 'package:location/location.dart' as l;
 
 class AddAddressScreen extends StatefulWidget {
   final Map<String, dynamic>? existingAddress;
@@ -26,6 +29,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   String _addressType = 'home';
   bool _isDefault = false;
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -43,6 +47,16 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       _landmarkController.text = addr['landmark'] ?? '';
       _addressType = addr['addressType'] ?? 'home';
       _isDefault = addr['isDefault'] == false;
+    } else {
+      // Use post-frame callback to safely read Provider in initState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final user = Provider.of<UserProvider>(context, listen: false).user;
+        setState(() {
+          _nameController.text = user.username!;
+          _phoneController.text = user.phoneNumber!;
+          _emailController.text = user.email!;
+        });
+      });
     }
   }
 
@@ -133,18 +147,59 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     }
   }
 
+  Future<void> _requestLocationPermission() async {
+    l.Location location = l.Location();
+
+    bool serviceEnabled;
+    l.PermissionStatus permissionGranted;
+
+    // Check if service is enabled
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        print('Location service is disabled.');
+        return;
+      }
+    }
+
+    // Request permission
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == l.PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != l.PermissionStatus.granted) {
+        print('Location permission not granted.');
+        return;
+      }
+    }
+    print('Location permission granted.');
+  }
+
   Future<void> _getCurrentLocation() async {
-    loc.Location location = loc.Location();
-    loc.LocationData locationData = await location.getLocation();
+    setState(() {
+      _isLocating = true;
+    });
 
-    double? latitude = locationData.latitude;
-    double? longitude = locationData.longitude;
+    try {
+      await _requestLocationPermission();
+      loc.Location location = loc.Location();
+      loc.LocationData locationData = await location.getLocation();
 
-    if (latitude != null && longitude != null) {
-      await _getAndSetAddressFromLatLng(latitude, longitude);
-      print('Latitude: $latitude, Longitude: $longitude');
-    } else {
-      print('Could not get location');
+      double? latitude = locationData.latitude;
+      double? longitude = locationData.longitude;
+
+      if (latitude != null && longitude != null) {
+        await _getAndSetAddressFromLatLng(latitude, longitude);
+        print('Latitude: $latitude, Longitude: $longitude');
+      } else {
+        print('Could not get location');
+      }
+    } catch (e) {
+      print('Location error: $e');
+    } finally {
+      setState(() {
+        _isLocating = false;
+      });
     }
   }
 
@@ -238,7 +293,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _getCurrentLocation,
+                      onPressed: _isLocating ? null : _getCurrentLocation,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey.shade200,
                         foregroundColor: Colors.black87,
@@ -246,12 +301,23 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         elevation: 0,
                         side: BorderSide(color: Colors.grey.shade400),
                       ),
-                      child: const Text(
-                        "Use my location",
-                        style: TextStyle(fontSize: 16),
-                      ),
+                      child: _isLocating
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.black54),
+                              ),
+                            )
+                          : const Text(
+                              "Use my location",
+                              style: TextStyle(fontSize: 16),
+                            ),
                     ),
                   ),
+
                   const SizedBox(height: 24),
 
                   _buildSectionTitle("Address"),

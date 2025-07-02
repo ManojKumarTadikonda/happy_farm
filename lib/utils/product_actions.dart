@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../screens/login_screen.dart';  // adjust the path to your LoginScreen file
+import '../presentation/auth/login_screen.dart';  // adjust the path to your LoginScreen file
 
 Future<bool> checkLoginStatus(BuildContext context) async {
   final prefs = await SharedPreferences.getInstance();

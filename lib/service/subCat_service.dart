@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SubCategoryService {
-  final String baseUrl = 'https://api.sabbafarm.com/api/subcategory';
+  final String? baseUrl = '${dotenv.env['BASE_URL']}/subcategory';
 
   Future<Map<String, String>> getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -21,7 +22,7 @@ class SubCategoryService {
       final uri = Uri.parse(
         page != null && perPage != null
             ? '$baseUrl?page=$page&perPage=$perPage'
-            : baseUrl,
+            : baseUrl!,
       );
 
       final response = await http.get(uri, headers: headers);

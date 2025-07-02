@@ -49,6 +49,9 @@ dependencies:
   image_cropper: ^8.1.0
   image_picker: ^1.1.2
   crop_your_image: ^2.0.0
+  location: ^8.0.1
+  geocoding: ^4.0.0
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +79,7 @@ flutter:
   assets:
     - assets/images/
     - assets/lottie/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
 
 class UserService {
-  final String _baseUrl = 'https://happyfarm-server.onrender.com/api/user';
+  final String? _baseUrl = '${dotenv.env['BASE_URL']}/user';
 
   //user sign in
   Future<Map<String, dynamic>?> signIn({

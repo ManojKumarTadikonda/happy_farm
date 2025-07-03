@@ -98,7 +98,7 @@ class ContactScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.shade100,
+                color: AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: iconWidget,
@@ -116,7 +116,7 @@ class ContactScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(subtitle,
                       style: TextStyle(
-                          fontSize: 14, color: Colors.green.shade800)),
+                          fontSize: 14, color: AppTheme.primaryColor)),
                 ],
               ),
             ),
@@ -161,7 +161,7 @@ class ContactScreen extends StatelessWidget {
             _buildSocialButton(
               icon: Brands.whatsapp,
               isBrandIcon: true,
-              color: Colors.green,
+              color: AppTheme.primaryColor,
               onTap: () => _launchWhatsApp("9171749999"),
             ),
           ],

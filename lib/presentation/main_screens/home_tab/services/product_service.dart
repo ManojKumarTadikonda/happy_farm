@@ -124,12 +124,13 @@ class ProductService {
     final headers = await getHeaders();
     final uri = Uri.parse('$baseUrl/featured');
     final response = await http.get(uri, headers: headers);
-
+    print(response.body);
     if (response.statusCode == 200) {
       final List<dynamic> jsonResponse = json.decode(response.body);
       return jsonResponse
           .map((item) => FeaturedProduct.fromJson(item))
           .toList();
+
     } else {
       throw Exception('Failed to load featured products');
     }
@@ -142,6 +143,7 @@ class ProductService {
 
   if (response.statusCode == 200) {
     final data = json.decode(response.body);
+    
     return AllProduct.fromJson(data);
   } else {
     throw Exception('Failed to load product');

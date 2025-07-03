@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({Key? key}) : super(key: key);
@@ -8,7 +9,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Privacy Policy'),
-        backgroundColor: Colors.green[700],
+        backgroundColor: AppTheme.primaryColor,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -33,7 +34,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: AppTheme.primaryColor,
                 ),
               ),
               const SizedBox(height: 12),
@@ -116,7 +117,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: Colors.green[600],
+          color: AppTheme.primaryColor,
         ),
       ),
     );

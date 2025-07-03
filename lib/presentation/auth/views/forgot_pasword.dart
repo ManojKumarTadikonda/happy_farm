@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 
 class ForgotPassWord extends StatefulWidget {
@@ -30,16 +30,12 @@ Future<void> _changePassword(String email) async {
     final success = await UserService().changeForgotPassword(email, newPassword);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed successfully!')),
-      );
+      
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => MainScreen()),
       );
     } else {
-      setState(() {
-        _errorMessage = 'Password change failed. Please try again.';
-      });
+      
     }
   } catch (e) {
     print('Error: $e');
@@ -235,13 +231,10 @@ Future<void> _changePassword(String email) async {
                             _changePassword(email);
                           },
                     child: _isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
+                        ?const Text(
+                            'Loading ...',
+                            style: TextStyle(
+                                fontSize: 17, fontWeight: FontWeight.w600),
                           )
                         : const Text(
                             'Change Password',

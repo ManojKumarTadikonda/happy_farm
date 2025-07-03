@@ -77,9 +77,9 @@ class _OrdersScreenState extends State<OrdersScreen>
                   color: Colors.white,
                   child: TabBar(
                     controller: _tabController,
-                    labelColor: Colors.green[800],
+                    labelColor: AppTheme.primaryColor,
                     unselectedLabelColor: Colors.grey,
-                    indicatorColor: Colors.green[800],
+                    indicatorColor: AppTheme.primaryColor,
                     tabs: statusTabs
                         .map((status) => Tab(text: status.capitalize()))
                         .toList(),
@@ -156,7 +156,7 @@ class OrderCard extends StatelessWidget {
       case 'pending':
         return Colors.orange;
       case 'delivered':
-        return Colors.green;
+        return AppTheme.primaryColor;
       case 'cancelled':
         return Colors.red;
       case 'shipped':
@@ -262,7 +262,7 @@ class OrderCard extends StatelessWidget {
                   _orderInfoTile(
                     "Total",
                     "₹$totalAmount",
-                    color: Colors.green,
+                    color: AppTheme.primaryColor,
                     isBold: true,
                   ),
                 ],

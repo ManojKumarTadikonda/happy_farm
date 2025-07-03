@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/utils/app_theme.dart';
-import 'package:happy_farm/presentation/auth/login_screen.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/views/login_screen.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -39,26 +40,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
 //  SUCCESS case
     if (result?['success'] == true) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Text('Success'),
-          content: Text("$result?['message'].Login to expolre"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (Route<dynamic> route) => false,
-                );
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
+      CustomSnackbar.showSuccess(
+          context, "Success", "$result?['message'].Login to expolre");
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (Route<dynamic> route) => false,
       );
     }
 // ERROR case
@@ -66,19 +53,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final errorMessage = result?['error'] ??
           result?['message'] ??
           'Registration failed. Please try again.';
-
-      // ✅ Show Floating SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      CustomSnackbar.showError(context, "Error", errorMessage);
     }
   }
-
   InputDecoration _inputDecoration(String label, IconData prefixIcon,
       {bool isPassword = false}) {
     return InputDecoration(
@@ -233,13 +210,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       onPressed: _isLoading ? null : _submitForm,
                       child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
+                          ?Text(
+                              'Loading ...',
+                              style: TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.w600),
                             )
                           : const Text(
                               'Create Account',

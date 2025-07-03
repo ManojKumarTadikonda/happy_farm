@@ -29,7 +29,7 @@ class UserService {
         await prefs.setString('userId', data['user']['_id']);
         return data;
       } else {
-        return {'error': data['message'] ?? 'Invalid login'};
+        return {'error': data['msg'] ?? 'Invalid login'};
       }
     } catch (e) {
       return {'error': 'An error occurred: $e'};
@@ -64,7 +64,7 @@ class UserService {
         await prefs.setString('userId', data['user']['_id']);
         return data;
       } else {
-        return {'error': data['message'] ?? 'Registration failed'};
+        return {'error': data['msg'] ?? 'Registration failed'};
       }
     } catch (e) {
       return {'error': 'An error occurred: $e'};

@@ -3,6 +3,7 @@ import 'package:happy_farm/presentation/main_screens/cart/models/cart_model.dart
 import 'package:happy_farm/presentation/main_screens/cart/views/checkout_screen.dart';
 // import 'package:happy_farm/screens/productdetails_screen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 import 'package:lottie/lottie.dart';
 
 class CartScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _CartScreenState extends State<CartScreen> {
       appBar: AppBar(
         title: const Text("My Cart"),
         centerTitle: true,
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: true,
@@ -217,7 +218,7 @@ class _CartScreenState extends State<CartScreen> {
                         icon: const Icon(Icons.add_circle_outline),
                         color: item.quantity == countInStock
                             ? Colors.grey
-                            : Colors.green,
+                            :  AppTheme.primaryColor,
                         onPressed: () {
                           if (item.quantity == countInStock) {
                             _showLimitDialog(context, "Stock limit reached",
@@ -287,7 +288,7 @@ class _CartScreenState extends State<CartScreen> {
           _paymentRow("Total Amount", total, isBold: true),
           const SizedBox(height: 6),
           const Text("You saved ₹120 on this order",
-              style: TextStyle(color: Colors.green)),
+              style: TextStyle(color:  AppTheme.primaryColor)),
         ],
       ),
     );
@@ -359,7 +360,7 @@ class _CartScreenState extends State<CartScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade800,
+                backgroundColor:  AppTheme.primaryColor,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 shape: RoundedRectangleBorder(

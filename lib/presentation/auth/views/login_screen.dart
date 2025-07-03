@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/models/user_provider.dart';
-import 'package:happy_farm/presentation/auth/forgot_pasword.dart';
+import 'package:happy_farm/presentation/auth/views/forgot_pasword.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
-import 'package:happy_farm/presentation/auth/register_screen.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/views/register_screen.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -41,9 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
         phoneNumber: result['user']['phone'],
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login successful!')),
-      );
+      CustomSnackbar.showSuccess(context, "Success", "Login success. welcome to SabbaFarm");
 
       Navigator.pushAndRemoveUntil(
         context,
@@ -51,8 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         (Route<dynamic> route) => false,
       );
     } else {
-      setState(() {
-      });
+      CustomSnackbar.showError(context, "Error", result?['error']);
     }
 
     setState(() {
@@ -182,7 +180,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const Text(
+                              'Loading ...',
+                              style: TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.bold),
+                            )
                           : const Text(
                               'Sign In',
                               style: TextStyle(

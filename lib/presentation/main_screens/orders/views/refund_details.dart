@@ -120,7 +120,7 @@ class RefundDetailsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: Colors.green, size: 22),
+                Icon(icon, color: AppTheme.primaryColor, size: 22),
                 const SizedBox(width: 8),
                 Text(
                   title,

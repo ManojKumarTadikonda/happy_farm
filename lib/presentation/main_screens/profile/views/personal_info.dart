@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/user_model.dart';
 import 'package:happy_farm/models/user_provider.dart';
-import 'package:happy_farm/presentation/main_screens/profile/services/address_service.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:happy_farm/presentation/main_screens/profile/views/addAddressScreen.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -21,17 +19,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  List<dynamic> _addresses = [];
-  dynamic _selectedAddress;
-  bool _isLoadingAddresses = false;
   String? userId;
 
   @override
   void initState() {
     super.initState();
-    _getaddress().then((_) {
-      _fetchUserAddresses();
-    });
   }
 
   Future<void> updatePersonalInfo() async {
@@ -70,30 +62,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     }
   }
 
-  Future<void> _getaddress() async {
-    final prefs = await SharedPreferences.getInstance();
-    userId = prefs.getString('userId');
-  }
-
-  Future<void> _fetchUserAddresses() async {
-    setState(() {
-      _isLoadingAddresses = true;
-    });
-
-    final _addressService = AddressService();
-    final data = await _addressService.getUserAddresses();
-
-    if (mounted) {
-      setState(() {
-        _addresses = data?['addresses'] ?? [];
-        if (_addresses.isNotEmpty) {
-          _selectedAddress = _addresses.first;
-        }
-        _isLoadingAddresses = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<UserProvider>(context, listen: false).user;
@@ -104,7 +72,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       appBar: AppBar(
         title: const Text("Personal Info"),
         centerTitle: true,
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -147,14 +115,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                           val!.length >= 10 ? null : 'Enter valid phone number',
                     ),
                     const SizedBox(height: 30),
-
-                    /// 🚀 Show addresses here
-                    _isLoadingAddresses
-                        ? const Center(child: CircularProgressIndicator())
-                        : _addresses.isEmpty
-                            ? _buildEmptyAddress()
-                            : _buildAddressSelection(),
-                    const SizedBox(height: 30),
                     ElevatedButton.icon(
                       onPressed: _isLoading ? null : updatePersonalInfo,
                       icon: _isLoading
@@ -167,7 +127,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                           : const Icon(Icons.save),
                       label: const Text('Save Changes'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -178,233 +138,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 ),
               ),
             ),
-    );
-  }
-
-  Widget _buildAddressSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "SELECT DELIVERY ADDRESS",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 18),
-        _addresses.isEmpty
-            ? const Text('No saved addresses. Please add a new address.')
-            : ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _addresses.length,
-                itemBuilder: (context, index) {
-                  final address = _addresses[index];
-                  final isSelected = _selectedAddress == address;
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedAddress = address;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.green.shade50
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected
-                              ? Colors.green.shade700
-                              : Colors.grey.shade300,
-                          width: isSelected ? 2 : 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  isSelected
-                                      ? Icons.check_circle_rounded
-                                      : Icons.radio_button_unchecked,
-                                  color: isSelected
-                                      ? Colors.green.shade700
-                                      : Colors.grey.shade500,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        address['name'] ?? '',
-                                        style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        '${address['address']}, ${address['city']}, ${address['state']} - ${address['pincode']}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                      if ((address['landmark'] ?? '')
-                                          .isNotEmpty)
-                                        Text(
-                                          'Landmark: ${address['landmark']}',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        '${address['phoneNumber']}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      Text(
-                                        ' ${address['email']}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.edit,
-                                color: Colors.grey.shade600,
-                                size: 22,
-                              ),
-                              onPressed: () async {
-                                // Open edit address screen
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AddAddressScreen(
-                                      existingAddress: address, // pass this
-                                    ),
-                                  ),
-                                );
-                                _fetchUserAddresses(); // reload after edit
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddAddressScreen(
-                    existingAddress: null,
-                  ),
-                ),
-              );
-              _fetchUserAddresses();
-            },
-            icon: const Icon(Icons.add_location_alt, size: 20),
-            label: const Text(
-              "Add New Address",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            style: ElevatedButton.styleFrom(
-              elevation: 3,
-              backgroundColor: Colors.green.shade600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyAddress() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            "No saved addresses found.",
-            style: TextStyle(fontSize: 18),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddAddressScreen(
-                    existingAddress: null,
-                  ),
-                ),
-              );
-              _fetchUserAddresses();
-            },
-            icon: const Icon(Icons.add_location_alt, size: 20),
-            label: const Text(
-              "Add New Address",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            style: ElevatedButton.styleFrom(
-              elevation: 3,
-              backgroundColor: Colors.green.shade600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -420,11 +153,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.green.shade700),
+        prefixIcon: Icon(icon, color: AppTheme.primaryColor),
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.green.shade700, width: 2),
+          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
       ),

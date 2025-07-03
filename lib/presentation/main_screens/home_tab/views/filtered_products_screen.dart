@@ -3,6 +3,7 @@ import 'package:happy_farm/presentation/main_screens/home_tab/models/product_mod
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/views/productdetails_screen.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/widgets/product_card.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 
 class FilteredProductsScreen extends StatefulWidget {
   final List<FilterProducts> products;
@@ -74,7 +75,7 @@ class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
                   Chip(
                     label: Text("₹${widget.minPrice} - ₹${widget.maxPrice}"),
                     backgroundColor: Colors.green.shade50,
-                    labelStyle: const TextStyle(color: Colors.green),
+                    labelStyle: const TextStyle(color:  AppTheme.primaryColor),
                   ),
                 if (widget.rating != null && widget.rating! > 0)
                   Chip(

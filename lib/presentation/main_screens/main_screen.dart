@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/user_provider.dart';
-import 'package:happy_farm/presentation/auth/login_screen.dart';
+import 'package:happy_farm/presentation/auth/views/login_screen.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/views/home_screen.dart';
 import 'package:happy_farm/presentation/main_screens/orders/views/order_screen.dart';
 import 'package:happy_farm/presentation/main_screens/profile/views/profile_screen.dart';
 import 'package:happy_farm/presentation/main_screens/search/views/search_screen.dart';
 import 'package:happy_farm/presentation/main_screens/wishlist/views/wishlist_screen.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends StatefulWidget { 
   final int selectedIndex;
   const MainScreen({Key? key, this.selectedIndex = 0}) : super(key: key);
 

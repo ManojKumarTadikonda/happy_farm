@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
-import 'package:happy_farm/presentation/auth/login_screen.dart';
+import 'package:happy_farm/presentation/auth/views/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:happy_farm/models/user_provider.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {

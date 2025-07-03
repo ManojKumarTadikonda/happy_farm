@@ -5,12 +5,12 @@ import 'package:happy_farm/presentation/main_screens/cart/views/cart_screen.dart
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/services/review_service.dart';
 import 'package:happy_farm/presentation/main_screens/wishlist/services/whislist_service.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductDetails extends StatefulWidget {
-  final dynamic
-      product; // Can be FeaturedProduct, AllProduct, or FilterProducts
+  final dynamic product; // Can be FeaturedProduct, AllProduct, or FilterProducts
 
   const ProductDetails({super.key, required this.product});
 
@@ -39,7 +39,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     fetchReviews();
     checkWishlistStatus(); // This alone is enough
     isCart = getIsCart();
-    // _loadUser();
+    _loadUser();
   }
 
   void _showLimitDialog(BuildContext context, String title, String message) {
@@ -60,12 +60,12 @@ class _ProductDetailsState extends State<ProductDetails> {
     );
   }
 
-  // Future<void> _loadUser() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     userId = prefs.getString('userId');
-  //   });
-  // }
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getString('userId');
+    });
+  }
 
   String getProductId() {
     return widget.product.id;
@@ -367,7 +367,7 @@ class _ProductDetailsState extends State<ProductDetails> {
       appBar: AppBar(
         title: const Text("Product Details"),
         centerTitle: true,
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -416,7 +416,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                     price.countInStock > 0 ? 'IN STOCK' : 'OUT OF STOCK',
                     style: TextStyle(
                         color:
-                            price.countInStock > 0 ? Colors.green : Colors.red,
+                            price.countInStock > 0 ? AppTheme.primaryColor : Colors.red,
                         fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
@@ -542,7 +542,8 @@ class _ProductDetailsState extends State<ProductDetails> {
             child: ChoiceChip(
               label: Text('${variant.quantity} ${variant.type}'),
               selected: isSelected,
-              selectedColor: Colors.green.shade700,
+              checkmarkColor: Colors.white,
+              selectedColor: AppTheme.primaryColor,
               onSelected: (_) {
                 setState(() {
                   selectedPriceIndex = index;
@@ -564,7 +565,7 @@ class _ProductDetailsState extends State<ProductDetails> {
         Text(
           '₹${price.actualPrice.toStringAsFixed(2)}',
           style: const TextStyle(
-              fontSize: 20, color: Colors.green, fontWeight: FontWeight.bold),
+              fontSize: 20, color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
         ),
         const SizedBox(width: 8),
         Text(
@@ -609,7 +610,7 @@ class _ProductDetailsState extends State<ProductDetails> {
             IconButton(
               icon: Icon(Icons.add_circle_outline),
               color:
-                  quantity == price.countInStock ? Colors.grey : Colors.green,
+                  quantity == price.countInStock ? Colors.grey : AppTheme.primaryColor,
               onPressed: () {
                 if (quantity == price.countInStock) {
                   _showLimitDialog(context, "Stock limit reached",
@@ -647,7 +648,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                   ? "Adding..."
                   : "Add To Cart"),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primaryColor,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
         ),
@@ -870,7 +871,7 @@ class _ProductDetailsState extends State<ProductDetails> {
         ),
         ElevatedButton(
           onPressed: submitReview,
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
           child: isSubmitting
               ? const Text('Submitting...')
               : const Text("Submit Review"),

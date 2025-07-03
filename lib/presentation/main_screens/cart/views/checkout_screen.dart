@@ -27,7 +27,7 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _orderService = OrderService();
   final _addressService = AddressService();
-
+  bool _isLoading = false;
   late Razorpay _razorpay;
 
   List<dynamic> _addresses = [];
@@ -77,6 +77,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
     }
   }
+  void _setLoading(bool value) {
+  if (!mounted) return;
+  setState(() => _isLoading = value);
+}
+
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     final verified = await _orderService.verifyPayment(
@@ -115,13 +120,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _orderIdFromBackend;
 
   Future<void> _submitOrder() async {
-    if (_selectedAddress == null) {
+  _setLoading(true);    if (_selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a delivery address')),
       );
       return;
     }
-
     final orderResponse = await _orderService.createOrder(
       name: _selectedAddress['name'],
       phoneNumber: _selectedAddress['phoneNumber'],
@@ -208,15 +212,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "SELECT DELIVERY ADDRESS",
+          "Select Delivery Address",
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
-            letterSpacing: 0.5,
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 5),
         _addresses.isEmpty
             ? const Text('No saved addresses. Please add a new address.')
             : ListView.builder(
@@ -374,7 +377,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               style: TextStyle(fontSize: 16),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
+              backgroundColor: AppTheme.primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -410,7 +413,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             icon: const Icon(Icons.add),
             label: const Text("Add New Address"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
+              backgroundColor:AppTheme.primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
             ),
           ),
@@ -465,22 +468,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 20),
             SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _submitOrder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                ),
-                child: const Text(
-                  'PLACE ORDER',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
-            ),
+                  child: _isLoading
+                      ? const Text(
+                          'Loading ...',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        )
+                      : const Text(
+                          'Place Order',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                )),
           ],
         ),
       ),

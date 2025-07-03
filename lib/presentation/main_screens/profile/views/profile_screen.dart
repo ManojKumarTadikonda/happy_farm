@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/presentation/main_screens/profile/views/contact_screen.dart';
 import 'package:happy_farm/presentation/main_screens/profile/views/privacypolicyscreen.dart';
+import 'package:happy_farm/presentation/main_screens/profile/views/saved_address.dart';
 import 'package:happy_farm/presentation/main_screens/profile/views/update_password.dart';
+import 'package:happy_farm/presentation/main_screens/profile/widgets/custom_dialog.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:happy_farm/presentation/main_screens/profile/views/personal_info.dart';
 import 'package:flutter/foundation.dart';
@@ -351,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             icon: const Icon(Icons.upload, color: Colors.white),
                             label: const Text("Upload Profile"),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: AppTheme.primaryColor,
                               padding: const EdgeInsets.symmetric(
                                   vertical: 12, horizontal: 24),
                               shape: RoundedRectangleBorder(
@@ -480,6 +482,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       },
       {
+        'icon': Icons.person_outlined,
+        'title': 'Saved addressess',
+        'subtitle': 'Manage your addressess',
+        'function': () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (context) => const SavedAddressesScreen()),
+          );
+          setState(() {}); // Rebuild UI after coming back
+        }
+      },
+      {
         'icon': Icons.lock_outlined,
         'title': 'Security',
         'subtitle': 'Change password',
@@ -516,13 +530,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'icon': Icons.logout,
         'title': 'Logout',
         'subtitle': 'Sign out of your account',
-        'function': () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.clear();
+        'function': () {
+          showDialog(
+            context: context,
+            builder: (context) => CustomConfirmDialog(
+              title: "Are you sure?",
+              message: "Do you really want to log out of your account?",
+              onYes: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
 
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-            (route) => false,
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                  (route) => false,
+                );
+              },
+              onNo: () {
+                Navigator.pop(context);
+              },
+            ),
           );
         }
       }
@@ -575,7 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.green.shade100,
+                color: AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: Colors.black),
@@ -598,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.green.shade800,
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                 ],

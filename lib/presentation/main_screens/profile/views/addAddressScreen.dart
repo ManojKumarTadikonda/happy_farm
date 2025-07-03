@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/main_screens/profile/services/address_service.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 import 'package:location/location.dart' as loc;
 import 'package:geocoding/geocoding.dart';
 import 'package:provider/provider.dart';
@@ -232,7 +233,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       appBar: AppBar(
         title: const Text("Enter a new address"),
         centerTitle: true,
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -421,7 +422,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                           ? _saveAddress
                           : _updateAddress,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
+                        backgroundColor: AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -538,7 +539,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
               _isDefault = value;
             });
           },
-          activeColor: Colors.green.shade700,
+          activeColor: AppTheme.primaryColor,
         ),
       ],
     );

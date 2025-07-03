@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/views/productdetails_screen.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/services/product_service.dart';
 import 'package:happy_farm/presentation/main_screens/search/services/search_service.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -196,7 +197,7 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(12),
             child: Icon(
               Icons.search,
-              color: Colors.green[600],
+              color: AppTheme.primaryColor,
               size: 24,
             ),
           ),
@@ -209,7 +210,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.green[600]!),
+                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor!),
                     ),
                   ),
                 )
@@ -479,7 +480,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     )
                   : Icon(
                       Icons.eco,
-                      color: Colors.green[400],
+                      color: AppTheme.primaryColor,
                       size: 30,
                     ),
             ),
@@ -502,7 +503,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: Colors.green[700],
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                 if (product['catName'] != null)
@@ -511,14 +512,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.green[50],
+                      color: AppTheme.primaryColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${product['catName']}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.green[700],
+                        color: AppTheme.primaryColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -528,13 +529,13 @@ class _SearchScreenState extends State<SearchScreen> {
             trailing: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.green[50],
+                color: AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: Colors.green[600],
+                color: AppTheme.primaryColor,
               ),
             ),
             onTap: () {
@@ -562,7 +563,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         children: [
                           CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.green[600]!),
+                                AppTheme.primaryColor),
                           ),
                           const SizedBox(height: 16),
                           Text(

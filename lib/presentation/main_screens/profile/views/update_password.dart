@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/models/user_provider.dart';
-import 'package:happy_farm/service/user_service.dart';
+import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:provider/provider.dart';
 

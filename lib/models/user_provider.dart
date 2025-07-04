@@ -10,11 +10,13 @@ class UserProvider with ChangeNotifier {
     String? username,
     String? email,
     String? phoneNumber,
+    String? image,
   }) {
     _user = UserModel(
       username: username ?? _user.username,
       email: email ?? _user.email,
       phoneNumber: phoneNumber ?? _user.phoneNumber,
+      image: image ?? _user.image,
     );
     notifyListeners();
   }
@@ -24,8 +26,29 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void updateProfileImage(String imageUrl) {
+    _user = UserModel(
+      username: _user.username,
+      email: _user.email,
+      phoneNumber: _user.phoneNumber,
+      image: imageUrl,
+    );
+    notifyListeners();
+  }
+
   void clearUser() {
-    _user = UserModel();
+    _user = UserModel(); // resets to default
+    notifyListeners();
+  }
+
+  void deleteUserDetails() {
+    // Clear all user-related details explicitly
+    _user = UserModel(
+      username: null,
+      email: null,
+      phoneNumber: null,
+      image: null,
+    );
     notifyListeners();
   }
 }

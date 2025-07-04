@@ -122,7 +122,7 @@ class AddressService {
   }
 
   // DELETE address
-  Future<bool> deleteAddress(String addressId) async {
+  Future<Map<String, dynamic>> deleteAddress(String addressId) async {
     try {
       final headers = await _getHeaders();
 
@@ -131,19 +131,64 @@ class AddressService {
         headers: headers,
       );
 
-      final data = await _handleResponse(response);
-      return data != null;
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Address deleted successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to delete address',
+        };
+      }
     } catch (e) {
       print('Error deleting address: $e');
-      return false;
+      return {
+        'success': false,
+        'message': 'Something went wrong. Please try again.',
+      };
+    }
+  }
+
+//Set Default Address
+  Future<Map<String, dynamic>> setDefaultAddress(String addressId) async {
+    try {
+      final headers = await _getHeaders();
+      final uri = Uri.parse('$_baseUrl/default/$addressId');
+
+      final response = await http.put(uri, headers: headers);
+
+      final Map<String, dynamic> json = jsonDecode(response.body);
+
+      final bool ok =
+          response.statusCode == 200 && (json['success'] as bool? ?? false);
+
+      return {
+        'success': ok,
+        'message': json['message'] ??
+            (ok ? 'Default address updated' : 'Operation failed'),
+        'data': ok ? json['data'] : null,
+      };
+    } catch (e) {
+      print('Error setting default address: $e');
+      return {
+        'success': false,
+        'message': 'Something went wrong. Please try again.',
+        'data': null,
+      };
     }
   }
 
   // COMMON response handler
-  Map<String, dynamic>? _handleResponse(http.Response response, {int successStatus = 200}) {
+  Map<String, dynamic>? _handleResponse(http.Response response,
+      {int successStatus = 200}) {
     final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-    if (response.statusCode == successStatus && responseData['success'] == true) {
+    if (response.statusCode == successStatus &&
+        responseData['success'] == true) {
       print('Success response: ${response.body}');
       return responseData['data'];
     } else {

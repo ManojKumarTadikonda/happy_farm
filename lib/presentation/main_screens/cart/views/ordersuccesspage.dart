@@ -17,7 +17,7 @@ class OrderSuccessPage extends StatelessWidget {
         return false; 
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F9F7),
+        backgroundColor: Colors.white,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -26,7 +26,7 @@ class OrderSuccessPage extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.check_circle_outline,
-                  color: Color(0xFF007B4F),
+                  color: AppTheme.primaryColor,
                   size: 100,
                 ),
                 const SizedBox(height: 20),
@@ -35,7 +35,7 @@ class OrderSuccessPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF007B4F),
+                    color: AppTheme.primaryColor,
                   ),
                   textAlign: TextAlign.center,
                 ),

@@ -27,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   HomePageView _currentPage = HomePageView.home;
+  
 
   void _onMenuTap() {
     setState(() {
@@ -744,6 +745,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final visibleProducts =
         _featuredProducts.take(_visibleFeaturedCount).toList();
+    final deviceHeight = MediaQuery.of(context).size.height;
+    final deviceWidth = MediaQuery.of(context).size.width;
+
+
+    final aspectRatio =
+        deviceWidth / (deviceHeight * 0.70);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
@@ -752,11 +759,11 @@ class _HomeScreenState extends State<HomeScreen> {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 2,
               mainAxisSpacing: 2,
-              childAspectRatio: 0.60,
+              childAspectRatio:aspectRatio,
             ),
             itemCount: visibleProducts.length,
             itemBuilder: (context, index) {
@@ -800,7 +807,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final visibleProducts = _allProducts.take(_visibleAllCount).toList();
+final deviceHeight = MediaQuery.of(context).size.height;
+    final deviceWidth = MediaQuery.of(context).size.width;
 
+
+    final aspectRatio =
+        deviceWidth / (deviceHeight * 0.73);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
@@ -816,7 +828,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 2,
                     mainAxisSpacing: 2,
-                    childAspectRatio: 0.60,
+                    childAspectRatio: aspectRatio,
                   ),
                   itemCount: visibleProducts.length,
                   itemBuilder: (context, index) {

@@ -17,6 +17,7 @@ class OrderDetailsPage extends StatefulWidget {
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
   Map<String, dynamic>? orderData;
   bool isLoading = true;
+  bool _isCancelling = false;
 
   @override
   void initState() {
@@ -51,53 +52,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     }
   }
 
-  void showLoaderDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevents dismiss by tapping outside
-      builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
-    );
-  }
-
-  void cancelOrderHandler(BuildContext context, String orderId) async {
-    final orderService = OrderService();
-    final result = await orderService.cancelOrder(orderId);
-
-    if (result?['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order Cancelled: ${result?['message']}')),
-      );
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => MainScreen(
-                    selectedIndex: 3,
-                  )));
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Cancel Failed'),
-            content: Text(result?['message'] ?? 'Something went wrong'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close dialog
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
   final List<String> cancelReasons = [
     'Ordered by mistake',
     'Found a better price elsewhere',
@@ -121,7 +75,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: StatefulBuilder(
-            builder: (context, setStateBottomSheet) {
+            builder: (
+              sheetCtx,
+              setStateBottomSheet,
+            ) {
               return Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -219,17 +176,46 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: selectedReason == null
+                            onPressed: selectedReason == null || _isCancelling
                                 ? null
                                 : () async {
-                                    Navigator.pop(
-                                        context); // Close the bottom sheet
-                                    showLoaderDialog(
-                                        context); // Show loading spinner
-                                    cancelOrderHandler(
-                                        context, orderData!['_id']);
-                                    Navigator.pop(
-                                        context); // Close the loader dialog after API completes
+                                    setStateBottomSheet(
+                                        () => _isCancelling = true);
+
+                                    final result = await OrderService()
+                                        .cancelOrder(orderData!['_id']);
+
+                                    if (!mounted) return;
+
+                                    setStateBottomSheet(
+                                        () => _isCancelling = false);
+                                    Navigator.of(sheetCtx).pop();
+                                    // If failed, show dialog BEFORE closing the sheet
+                                    if (result?['success'] != true) {
+                                      showDialog(
+                                        context:
+                                            context, // use parent page context
+                                        builder: (_) => AlertDialog(
+                                          title: const Text('Cancel Failed'),
+                                          content: Text(result?['message'] ??
+                                              'Something went wrong'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(),
+                                              child: const Text('OK'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    } else {
+                                      // If success, close sheet and go to main screen
+                                      Navigator.pop(
+                                          sheetCtx); // close the sheet
+                                      setState(() {
+                                        
+                                      });
+                                    }
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red[600],
@@ -240,13 +226,21 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              "Confirm Cancel",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: _isCancelling
+                                ? const Text(
+                                    "Canceling ...",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Confirm Cancel",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -265,7 +259,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   Future<void> fetchOrderDetails() async {
     try {
       final data = await OrderService().fetchOrderById(widget.orderId);
-
       setState(() {
         orderData = data;
         isLoading = false;
@@ -410,7 +403,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               children: [
                                 SizedBox(height: 4),
                                 Text("Quantity: ${product['quantity']}"),
-                                Text("Price: ₹${product['orderedPrice']}"),
+                                Text("Price: ₹${product['price']}"),
                               ],
                             ),
                           ),
@@ -420,7 +413,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       const SizedBox(height: 12),
 
                       // 🚀 If not cancelled, show "Cancel Order" button
-                      if (!isCancelled)
+                      if (!isCancelled  && orderData!['orderStatus'].toString() == 'pending')
                         Align(
                           alignment: Alignment.bottomRight,
                           child: ElevatedButton.icon(

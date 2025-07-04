@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 
 class CustomConfirmDialog extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback onYes;
   final VoidCallback onNo;
+  final String msg1;
+  final String msg2;
 
   const CustomConfirmDialog({
     Key? key,
@@ -12,6 +15,8 @@ class CustomConfirmDialog extends StatelessWidget {
     required this.message,
     required this.onYes,
     required this.onNo,
+    required this.msg1,
+    required this.msg2,
   }) : super(key: key);
 
   @override
@@ -27,7 +32,7 @@ class CustomConfirmDialog extends StatelessWidget {
           children: [
             const CircleAvatar(
               radius: 28,
-              backgroundColor: Color(0xFFFF5A5F),
+              backgroundColor: Color.fromARGB(255, 255, 17, 0),
               child: Icon(Icons.help_outline, color: Colors.white, size: 32),
             ),
             const SizedBox(height: 16),
@@ -53,33 +58,33 @@ class CustomConfirmDialog extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: ElevatedButton(
                     onPressed: onNo,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFF5A5F)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      "Cancel",
-                      style: TextStyle(color: Color(0xFFFF5A5F)),
+                    child: Text(
+                      msg1,
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: onYes,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF5A5F),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.primaryColor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      "Logout",
-                      style: TextStyle(color: Colors.white),
+                    child: Text(
+                      msg2,
+                      style: TextStyle(color: AppTheme.primaryColor),
                     ),
                   ),
                 ),

@@ -56,6 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
           username: userData['name'] ?? 'No Name',
           email: userData['email'] ?? 'No Email',
           phoneNumber: userData['phone'] ?? 'No Phone',
+          image: userData['image'] ?? "",
         );
       }
     }

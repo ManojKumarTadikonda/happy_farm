@@ -36,10 +36,10 @@ class WishlistService {
     }
   }
 
-  static Future<bool> removeFromWishlist(String ProductId) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+ static Future<String> removeFromWishlist(String productId) async {
+    final prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('token');
-    final url = Uri.parse('$baseUrl/$ProductId');
+    final url = Uri.parse('$baseUrl/$productId');
 
     final response = await http.delete(
       url,
@@ -48,7 +48,17 @@ class WishlistService {
         'Content-Type': 'application/json',
       },
     );
-    return response.statusCode == 200;
+
+    final Map<String, dynamic> body = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && body['success'] == true) {
+      // Success message from backend
+      return body['message'] ?? 'Item removed from wishlist.';
+    } else {
+      // Return backend's error message or fallback
+      final errorMessage = body['message'] ?? body['error'] ?? 'Failed to remove item.';
+      throw Exception(errorMessage);
+    }
   }
 
   static Future<String> addToMyList(String productId) async {

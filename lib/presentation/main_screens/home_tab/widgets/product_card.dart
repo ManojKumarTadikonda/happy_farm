@@ -9,7 +9,7 @@ class UniversalProductCard extends StatefulWidget {
   const UniversalProductCard({
     super.key,
     required this.product,
-    this.imageHeight = 160, // Reduced for GridView fit
+    this.imageHeight = 200, // Reduced for GridView fit
   });
 
   @override

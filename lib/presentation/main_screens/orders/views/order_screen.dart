@@ -19,7 +19,7 @@ class _OrdersScreenState extends State<OrdersScreen>
   bool isLoading = true;
   late TabController _tabController;
 
-  final List<String> statusTabs = ['All', 'pending', 'delivered', 'cancelled'];
+  final List<String> statusTabs = ['All', 'pending', 'confirm','delivered', 'cancelled'];
 
   @override
   void initState() {
@@ -161,6 +161,8 @@ class OrderCard extends StatelessWidget {
         return Colors.red;
       case 'shipped':
         return Colors.blue;
+      case 'confirm':
+        return AppTheme.primaryColor;
       default:
         return Colors.grey;
     }
@@ -176,6 +178,8 @@ class OrderCard extends StatelessWidget {
         return Icons.cancel;
       case 'shipped':
         return Icons.local_shipping;
+      case 'confirm':
+        return Icons.check_circle;
       default:
         return Icons.help_outline;
     }

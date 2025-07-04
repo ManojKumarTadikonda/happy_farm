@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/presentation/auth/views/login_screen.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
-import 'package:happy_farm/widgets/custom_snackbar.dart';
+import 'package:happy_farm/presentation/auth/widgets/custom_snackba_msg.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);

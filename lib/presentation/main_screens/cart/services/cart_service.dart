@@ -42,23 +42,25 @@ class CartService {
     }
   }
 
-  static Future<bool> deleteCartItem(String cartItemId) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('token');
-    final url = Uri.parse('$baseUrl/$cartItemId');
+static Future<String> deleteCartItem(String cartItemId) async {
+    final prefs  = await SharedPreferences.getInstance();
+    final token  = prefs.getString('token');
+    final url    = Uri.parse('$baseUrl/$cartItemId');
 
     final response = await http.delete(
       url,
       headers: {
-        'Authorization': '$token',
+        'Authorization': token ?? '',
         'Content-Type': 'application/json',
       },
     );
+    final Map<String, dynamic> body = jsonDecode(response.body);
 
-    if (response.statusCode == 200) {
-      return true;
+    if (response.statusCode == 200 && body['success'] == true) {
+      return body['message'] as String? ?? 'Item deleted.';
     } else {
-      throw Exception('Failed to delete cart item: ${response.statusCode}');
+      final backendMsg = body['message'] ?? body['error'] ?? 'Unknown error';
+      throw Exception(backendMsg);
     }
   }
 

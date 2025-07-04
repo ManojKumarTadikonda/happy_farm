@@ -3,7 +3,9 @@ import 'package:happy_farm/presentation/main_screens/cart/models/cart_model.dart
 import 'package:happy_farm/presentation/main_screens/cart/views/checkout_screen.dart';
 // import 'package:happy_farm/screens/productdetails_screen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
+import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:lottie/lottie.dart';
 
 class CartScreen extends StatefulWidget {
@@ -18,7 +20,8 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   late List<CartItem> _cartItems = [];
   bool _isLoading = true;
-  @override
+  bool _isDeleting = false;
+  Set<String> _deletingItemIds = {};
   @override
   void initState() {
     _fetchCart();
@@ -73,7 +76,18 @@ class _CartScreenState extends State<CartScreen> {
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (builder) => MainScreen(
+                selectedIndex: 0,
+              ),
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? Center(child: Lottie.asset('assets/lottie/cartloading.json'))
@@ -106,8 +120,6 @@ class _CartScreenState extends State<CartScreen> {
                               .map((item) => _buildCartItem(item))
                               .toList(),
                           const SizedBox(height: 16),
-                          _buildCouponField(),
-                          const SizedBox(height: 12),
                           _buildPaymentDetails(
                               _cartItems.length, _calculateTotal()),
                           const SizedBox(height: 16),
@@ -177,15 +189,53 @@ class _CartScreenState extends State<CartScreen> {
               Column(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () async {
-                      bool success = await CartService.deleteCartItem(item.id);
-                      if (success) {
-                        setState(() {
-                          _cartItems.removeAt(itemIndex);
-                        });
-                      }
-                    },
+                    icon: _deletingItemIds.contains(item.id)
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.red,
+                            ),
+                          )
+                        : const Icon(Icons.delete, color: Colors.red),
+                    onPressed: _deletingItemIds.contains(item.id)
+                        ? null // disable while this item is deleting
+                        : () async {
+                            setState(() {
+                              _deletingItemIds.add(item.id);
+                            });
+
+                            try {
+                              final msg =
+                                  await CartService.deleteCartItem(item.id);
+
+                              if (mounted) {
+                                showCustomToast(
+                                  context: context,
+                                  title: "Success",
+                                  message: msg,
+                                  isError: false,
+                                );
+                                _fetchCart(); // Optionally reload cart
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                showCustomToast(
+                                  context: context,
+                                  title: "Error",
+                                  message: e.toString(),
+                                  isError: true,
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _deletingItemIds.remove(item.id);
+                                });
+                              }
+                            }
+                          },
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -197,7 +247,6 @@ class _CartScreenState extends State<CartScreen> {
                             : Colors.deepOrange,
                         onPressed: () {
                           if (item.quantity == 1) {
-                            
                           } else {
                             int newQty = item.quantity - 1;
                             setState(() {
@@ -218,7 +267,7 @@ class _CartScreenState extends State<CartScreen> {
                         icon: const Icon(Icons.add_circle_outline),
                         color: item.quantity == countInStock
                             ? Colors.grey
-                            :  AppTheme.primaryColor,
+                            : AppTheme.primaryColor,
                         onPressed: () {
                           if (item.quantity == countInStock) {
                             _showLimitDialog(context, "Stock limit reached",
@@ -249,24 +298,6 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildCouponField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Text("Avail Offer (Coupon Code)", style: TextStyle(fontSize: 15)),
-          Icon(Icons.arrow_forward_ios, size: 16),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPaymentDetails(int itemCount, int total) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -288,7 +319,7 @@ class _CartScreenState extends State<CartScreen> {
           _paymentRow("Total Amount", total, isBold: true),
           const SizedBox(height: 6),
           const Text("You saved ₹120 on this order",
-              style: TextStyle(color:  AppTheme.primaryColor)),
+              style: TextStyle(color: AppTheme.primaryColor)),
         ],
       ),
     );
@@ -360,7 +391,7 @@ class _CartScreenState extends State<CartScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor:  AppTheme.primaryColor,
+                backgroundColor: AppTheme.primaryColor,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 shape: RoundedRectangleBorder(

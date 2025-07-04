@@ -31,7 +31,12 @@ class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
   Widget build(BuildContext context) {
     final visibleFilteredProducts =
         widget.products.take(_visibleFilteredCount).toList();
+  final deviceHeight = MediaQuery.of(context).size.height;
+    final deviceWidth = MediaQuery.of(context).size.width;
 
+
+    final aspectRatio =
+        deviceWidth / (deviceHeight * 0.75);
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,12 +117,11 @@ class _FilteredProductsScreenState extends State<FilteredProductsScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: GridView.builder(
                             itemCount: visibleFilteredProducts.length,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               crossAxisSpacing: 8,
                               mainAxisSpacing: 8,
-                              childAspectRatio: 0.65,
+                              childAspectRatio:aspectRatio,
                             ),
                             itemBuilder: (context, index) {
                               final product = visibleFilteredProducts[index];

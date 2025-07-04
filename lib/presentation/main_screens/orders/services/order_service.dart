@@ -103,6 +103,7 @@ class OrderService {
         Uri.parse('$baseUrl/orders/$orderId'),
         headers: headers,
       );
+      print('Manoj:$response');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -120,7 +121,6 @@ class OrderService {
   // Add this inside the OrderService class
   Future<Map<String, dynamic>?> cancelOrder(String orderId) async {
     try {
-      print('mannn$orderId');
       final headers = await _getAuthHeaders();
       final response = await http.post(
         Uri.parse('$baseUrl/orders/user/cancel/$orderId'),

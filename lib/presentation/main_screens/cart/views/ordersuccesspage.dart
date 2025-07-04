@@ -58,7 +58,7 @@ class OrderSuccessPage extends StatelessWidget {
                       style: TextStyle(fontSize: 16),
                     ),
                     onPressed: () {
-                      Navigator.push(
+                      Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                               builder: (context) => MainScreen(selectedIndex: 3,)));

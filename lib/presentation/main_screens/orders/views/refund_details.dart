@@ -99,6 +99,33 @@ class RefundDetailsScreen extends StatelessWidget {
                 );
               },
             ),
+            Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.yellow[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.yellow[700]!),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, color: Colors.orange),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "Refunds are typically processed within 7 working days. "
+                          "Please check your bank account or contact support if delayed.",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.orange[900],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
           ],
         ),
       ),

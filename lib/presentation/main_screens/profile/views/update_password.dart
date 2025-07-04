@@ -3,6 +3,7 @@ import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class UpdatePassword extends StatefulWidget {
@@ -40,13 +41,12 @@ class _UpdatePasswordState extends State<UpdatePassword> {
     });
 
     if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed successfully!')),
-      );
+      showSuccessSnackbar(context, 'Password changed successfully!');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainScreen()),
       );
     } else {
+      showErrorSnackbar(context, result['message']);
       setState(() {
         _errorMessage = result['message'];
       });

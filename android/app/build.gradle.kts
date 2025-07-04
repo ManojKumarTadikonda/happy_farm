@@ -38,7 +38,9 @@ android {
         }
     }
 }
-
+dependencies {
+    compileOnly("com.guardsquare:proguard-annotations:7.5.0")
+}
 flutter {
     source = "../.."
 }

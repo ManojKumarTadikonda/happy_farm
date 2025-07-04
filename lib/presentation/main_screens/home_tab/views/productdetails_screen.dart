@@ -4,6 +4,7 @@ import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/main_screens/cart/views/cart_screen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/services/review_service.dart';
+import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/presentation/main_screens/wishlist/services/whislist_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
@@ -31,6 +32,7 @@ class _ProductDetailsState extends State<ProductDetails> {
   bool isLoadingWish = false;
   bool isLoadingCart = false;
   bool isSubmittingReview = false;
+  bool isCartStatusLoading = false;
   String? userId;
 
   @override
@@ -38,6 +40,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     super.initState();
     fetchReviews();
     checkWishlistStatus();
+    checkCartStatus(getProductId());
     isCart = getIsCart();
     _loadUser();
   }
@@ -143,6 +146,16 @@ class _ProductDetailsState extends State<ProductDetails> {
     }
   }
 
+  Future<void> checkCartStatus(String cartItemId) async {
+    try {
+      setState(() {
+        isCartStatusLoading = true;
+      });
+
+      print(getIsCart());
+    } catch (e) {}
+  }
+
   Future<void> fetchReviews() async {
     setState(() {
       isLoadingReviews = true;
@@ -156,15 +169,11 @@ class _ProductDetailsState extends State<ProductDetails> {
           reviews = response['data'];
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(response['message'] ?? "Failed to load reviews")),
-        );
+        showErrorSnackbar(
+            context, response['message'] ?? "Failed to load reviews");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading reviews: $e")),
-      );
+      showErrorSnackbar(context, '$e');
     } finally {
       setState(() {
         isLoadingReviews = false;
@@ -181,13 +190,9 @@ class _ProductDetailsState extends State<ProductDetails> {
       setState(() {
         isWish = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Added to wishlist")),
-      );
+      showSuccessSnackbar(context, 'Added to wishlist');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to add to wishlist: $e")),
-      );
+      showErrorSnackbar(context, '$e');
     } finally {
       setState(() {
         isLoadingWish = false;
@@ -199,23 +204,14 @@ class _ProductDetailsState extends State<ProductDetails> {
     try {
       setState(() {
         isLoadingWish = true;
-      });await WishlistService.removeFromWishlist(getProductId());
+      });
+      await WishlistService.removeFromWishlist(getProductId());
       setState(() {
         isWish = false;
       });
-      showCustomToast(
-        context: context,
-        title: "Sucess",
-        message: 'Item Removed from the wishlist',
-        isError: false,
-      );
+      showSuccessSnackbar(context, 'Item Removed from the wishlist');
     } catch (e) {
-      showCustomToast(
-        context: context,
-        title: "Error",
-        message: '$e',
-        isError: true,
-      );
+      showErrorSnackbar(context, '$e');
     } finally {
       setState(() {
         isLoadingWish = false;
@@ -226,14 +222,19 @@ class _ProductDetailsState extends State<ProductDetails> {
   Future<void> addToCart() async {
     final productId = getProductId();
     final price = getProductPrices()[selectedPriceIndex];
+
     setState(() {
       isLoadingCart = true;
     });
-    final success = await CartService.addToCart(
+
+    final result = await CartService.addToCart(
       productId: productId,
       priceId: price.id,
       quantity: quantity,
     );
+
+    final success = result['success'] as bool;
+    final message = result['message'] as String;
 
     if (success) {
       setState(() {
@@ -242,22 +243,25 @@ class _ProductDetailsState extends State<ProductDetails> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Item added to cart"),
+          content: Text(message), // ✅ Show success message
           action: SnackBarAction(
             label: "GO TO CART",
             textColor: Colors.amber,
             onPressed: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => CartScreen(userId: userId!)));
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartScreen(userId: userId!),
+                ),
+              );
             },
           ),
           backgroundColor: Colors.black87,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -265,9 +269,7 @@ class _ProductDetailsState extends State<ProductDetails> {
       setState(() {
         isLoadingCart = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to add to cart")),
-      );
+      showErrorSnackbar(context, message); // ✅ Show error message
     }
   }
 
@@ -285,7 +287,14 @@ class _ProductDetailsState extends State<ProductDetails> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (builder) => MainScreen(
+                selectedIndex: 0,
+              ),
+            ),
+          ),
         ),
       ),
       backgroundColor: Colors.white,
@@ -917,11 +926,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                           : () async {
                               final reviewText = reviewController.text.trim();
                               if (reviewText.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Please enter a review."),
-                                  ),
-                                );
+                                showInfoSnackbar(
+                                    context, "Please enter a review.");
                                 return;
                               }
 
@@ -991,12 +997,7 @@ class _ProductDetailsState extends State<ProductDetails> {
 
   Future<void> _submitReview(String reviewText, int rating) async {
     if (reviewText.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please add a review"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showInfoSnackbar(context, "Please add a review");
       return;
     }
 
@@ -1016,22 +1017,12 @@ class _ProductDetailsState extends State<ProductDetails> {
 
       if (result['success'] == true) {
         fetchReviews();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Review submitted successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showSuccessSnackbar(context, "Review submitted successfully!");
       } else {
         throw Exception(result['message'] ?? "Failed to submit review");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showErrorSnackbar(context, '$e');
     } finally {
       setState(() {
         isSubmittingReview = false;

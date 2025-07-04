@@ -18,8 +18,19 @@ class _OrdersScreenState extends State<OrdersScreen>
   List orders = [];
   bool isLoading = true;
   late TabController _tabController;
+  // Enhanced color scheme
+  static const Color accentGreen = Color(0xFF4CAF50);
 
-  final List<String> statusTabs = ['All', 'pending', 'confirm','delivered', 'cancelled'];
+  static const Color veryLightGreen = Color(0xFFE8F5E8);
+  static const Color textDark = Color(0xFF2C3E50);
+  static const Color textMedium = Color(0xFF546E7A);
+  final List<String> statusTabs = [
+    'All',
+    'pending',
+    'confirm',
+    'delivered',
+    'cancelled'
+  ];
 
   @override
   void initState() {
@@ -99,9 +110,41 @@ class _OrdersScreenState extends State<OrdersScreen>
 
                       if (filteredOrders.isEmpty) {
                         return Center(
-                          child: Text(
-                            'No ${status.toLowerCase()} products',
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: veryLightGreen,
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: Icon(
+                                  Icons
+                                      .inventory_2_outlined, // more relevant icon for orders
+                                  size: 60,
+                                  color: accentGreen,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                "No ${status.toLowerCase()} orders",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: textDark,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "You haven't placed any orders yet",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: textMedium,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         );
                       }
@@ -130,17 +173,6 @@ class _OrdersScreenState extends State<OrdersScreen>
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => MainScreen()),
-          );
-        },
-        label: Text('Shop More'),
-        icon: Icon(Icons.storefront),
-        backgroundColor: AppTheme.primaryColor,
-      ),
     );
   }
 }

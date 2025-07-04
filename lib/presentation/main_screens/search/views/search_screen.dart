@@ -4,6 +4,7 @@ import 'package:happy_farm/presentation/main_screens/home_tab/views/productdetai
 import 'package:happy_farm/presentation/main_screens/home_tab/services/product_service.dart';
 import 'package:happy_farm/presentation/main_screens/search/services/search_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -153,18 +154,7 @@ class _SearchScreenState extends State<SearchScreen> {
           isLoading = false;
           _searchResults = [];
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Search failed: ${e.toString()}'),
-            backgroundColor: orangeAccent,
-            duration: Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        showErrorSnackbar(context, 'No products found!');
       }
     }
   }

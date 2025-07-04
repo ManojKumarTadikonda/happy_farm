@@ -21,7 +21,11 @@ class _CartScreenState extends State<CartScreen> {
   late List<CartItem> _cartItems = [];
   bool _isLoading = true;
   bool _isDeleting = false;
+  Set<String> _updatingItemIds = {};
   Set<String> _deletingItemIds = {};
+  Set<String> _updatingAdd = {};
+  Set<String> _updatingRemove = {};
+  List<CartItem> cartItems = [];
   @override
   void initState() {
     _fetchCart();
@@ -41,6 +45,35 @@ class _CartScreenState extends State<CartScreen> {
         _cartItems = items;
       });
     });
+  }
+
+  Future<void> _handleUpdateCartItem({
+    required String cartItemId,
+    int? newQuantity,
+    String? newPriceId,
+  }) async {
+    // mark this item as "updating"
+    setState(() => _updatingItemIds.add(cartItemId));
+
+    try {
+      final updated = await CartService.updateCartItem(
+        cartItemId: cartItemId,
+        quantity: newQuantity,
+        priceId: newPriceId,
+      );
+
+      // replace the old item with the updated one
+      final index = cartItems.indexWhere((e) => e.id == cartItemId);
+      if (index != -1) {
+        setState(() => cartItems[index] = updated);
+      } showSuccessSnackbar(context, "Cart Updated");
+    } catch (e) {
+       showErrorSnackbar(context, '$e');
+    } finally {
+      if (mounted) {
+        setState(() => _updatingItemIds.remove(cartItemId));
+      }
+    }
   }
 
   void _showLimitDialog(BuildContext context, String title, String message) {
@@ -211,22 +244,12 @@ class _CartScreenState extends State<CartScreen> {
                                   await CartService.deleteCartItem(item.id);
 
                               if (mounted) {
-                                showCustomToast(
-                                  context: context,
-                                  title: "Success",
-                                  message: msg,
-                                  isError: false,
-                                );
+                                showSuccessSnackbar(context,msg);
                                 _fetchCart(); // Optionally reload cart
                               }
                             } catch (e) {
                               if (mounted) {
-                                showCustomToast(
-                                  context: context,
-                                  title: "Error",
-                                  message: e.toString(),
-                                  isError: true,
-                                );
+                                showErrorSnackbar(context, '$e');
                               }
                             } finally {
                               if (mounted) {
@@ -241,51 +264,83 @@ class _CartScreenState extends State<CartScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
+                        icon: _updatingRemove.contains(item.id)
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.remove_circle_outline),
                         color: item.quantity == 1
                             ? Colors.grey
-                            : Colors.deepOrange,
-                        onPressed: () {
-                          if (item.quantity == 1) {
-                          } else {
-                            int newQty = item.quantity - 1;
-                            setState(() {
-                              _cartItems[itemIndex] = CartItem(
-                                id: item.id,
-                                priceId: item.priceId,
-                                userId: item.userId,
-                                product: item.product,
-                                quantity: newQty,
-                                subTotal: actualPrice * newQty,
-                              );
-                            });
-                          }
-                        },
+                            : AppTheme.primaryColor,
+                        onPressed: (item.quantity == 1 ||
+                                _updatingRemove.contains(item.id))
+                            ? null
+                            : () async {
+                                final newQty = item.quantity - 1;
+
+                                setState(() => _updatingRemove.add(item.id));
+
+                                try {
+                                  final updatedItem =
+                                      await CartService.updateCartItem(
+                                    cartItemId: item.id,
+                                    quantity: newQty,
+                                  );
+                                  setState(() {
+                                    _cartItems[itemIndex] = updatedItem;
+                                  });
+                                } catch (e) {
+                                   showErrorSnackbar(context, '$e');
+                                } finally {
+                                  if (mounted) {
+                                    setState(
+                                        () => _updatingRemove.remove(item.id));
+                                  }
+                                }
+                              },
                       ),
                       Text(item.quantity.toString()),
                       IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
+                        icon: _updatingAdd.contains(item.id)
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.add_circle_outline),
                         color: item.quantity == countInStock
                             ? Colors.grey
-                            : AppTheme.primaryColor,
-                        onPressed: () {
-                          if (item.quantity == countInStock) {
-                            _showLimitDialog(context, "Stock limit reached",
-                                "Cannot add more than available stock.");
-                          } else {
-                            int newQty = item.quantity + 1;
-                            setState(() {
-                              _cartItems[itemIndex] = CartItem(
-                                id: item.id,
-                                priceId: item.priceId,
-                                userId: item.userId,
-                                product: item.product,
-                                quantity: newQty,
-                                subTotal: actualPrice * newQty,
-                              );
-                            });
-                          }
-                        },
+                            : Colors.deepOrange,
+                        onPressed: (item.quantity == countInStock ||
+                                _updatingAdd.contains(item.id))
+                            ? null
+                            : () async {
+                                final newQty = item.quantity + 1;
+
+                                setState(() => _updatingAdd.add(item.id));
+
+                                try {
+                                  final updatedItem =
+                                      await CartService.updateCartItem(
+                                    cartItemId: item.id,
+                                    quantity: newQty,
+                                  );
+                                  setState(() {
+                                    _cartItems[itemIndex] = updatedItem;
+                                  });
+                                } catch (e) {
+                                  showErrorSnackbar(context, '$e');
+                                } finally {
+                                  if (mounted) {
+                                    setState(
+                                        () => _updatingAdd.remove(item.id));
+                                  }
+                                }
+                              },
                       ),
                     ],
                   ),

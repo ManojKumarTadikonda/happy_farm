@@ -3,7 +3,9 @@ import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/presentation/main_screens/orders/services/order_service.dart';
 import 'package:happy_farm/presentation/main_screens/orders/views/refund_details.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderDetailsPage extends StatefulWidget {
   final String orderId;
@@ -18,6 +20,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   Map<String, dynamic>? orderData;
   bool isLoading = true;
   bool _isCancelling = false;
+  bool _isCheckingRefund = false;
+  bool _isDownloadingInvoice = false;
 
   @override
   void initState() {
@@ -38,6 +42,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       );
 
       if (refund != null) {
+        setState(() {
+          _isCheckingRefund = false;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -45,10 +52,42 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No refund found for this order.')),
-        );
+        setState(() {
+          _isCheckingRefund = true;
+        });
+        showErrorSnackbar(context, "No Refund Details Available");
       }
+    }
+  }
+
+  // Method to download invoice
+  Future<void> _downloadInvoice() async {
+    final String? invoiceUrl = orderData?['invoice'];
+
+    if (invoiceUrl == null || invoiceUrl.isEmpty) {
+      showErrorSnackbar(context, "Invoice not available");
+      return;
+    }
+
+    setState(() {
+      _isDownloadingInvoice = true;
+    });
+
+    try {
+      final Uri url = Uri.parse(invoiceUrl);
+
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+        showInfoSnackbar(context, "Opening invoice...");
+      } else {
+        showErrorSnackbar(context, "Could not open invoice");
+      }
+    } catch (e) {
+      showErrorSnackbar(context, "Error downloading invoice: ${e.toString()}");
+    } finally {
+      setState(() {
+        _isDownloadingInvoice = false;
+      });
     }
   }
 
@@ -186,7 +225,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                         .cancelOrder(orderData!['_id']);
 
                                     if (!mounted) return;
-
+                                    if (result?['success']) {
+                                      showSuccessSnackbar(context,
+                                          "Order cancelled successfully");
+                                    }
                                     setStateBottomSheet(
                                         () => _isCancelling = false);
                                     Navigator.of(sheetCtx).pop();
@@ -209,12 +251,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                         ),
                                       );
                                     } else {
-                                      // If success, close sheet and go to main screen
-                                      Navigator.pop(
-                                          sheetCtx); // close the sheet
-                                      setState(() {
-                                        
-                                      });
+                                      fetchOrderDetails();
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
@@ -260,7 +297,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     try {
       final data = await OrderService().fetchOrderById(widget.orderId);
       setState(() {
+        print('mmm${widget.orderId}');
         orderData = data;
+        print("mvvv$orderData");
         isLoading = false;
       });
     } catch (e) {
@@ -276,6 +315,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         orderData?['orderStatus']?.toString().toLowerCase() ?? '';
 
     final bool isCancelled = orderStatus == 'cancelled';
+    final bool hasInvoice = orderData?['invoice'] != null &&
+        orderData!['invoice'].toString().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -283,6 +324,17 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         centerTitle: true,
         backgroundColor: primaryColor,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (builder) => MainScreen(
+                selectedIndex: 3,
+              ),
+            ),
+          ),
+        ),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator(color: primaryColor))
@@ -410,61 +462,132 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         );
                       }).toList(),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
-                      // 🚀 If not cancelled, show "Cancel Order" button
-                      if (!isCancelled  && orderData!['orderStatus'].toString() == 'pending')
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: ElevatedButton.icon(
-                            onPressed: showCancelReasonSheet,
-                            icon: const Icon(Icons.cancel, color: Colors.white),
-                            label: const Text(
-                              "Cancel Order",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red[600],
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                      // 🚀 Action Buttons Row
+                      Row(
+                        children: [
+                          // Download Invoice Button
+                          if (hasInvoice)
+                            Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                child: ElevatedButton.icon(
+                                  onPressed: _isDownloadingInvoice
+                                      ? null
+                                      : _downloadInvoice,
+                                  icon: _isDownloadingInvoice
+                                      ? SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
+                                          ),
+                                        )
+                                      : const Icon(Icons.download,
+                                          color: Colors.white, size: 20),
+                                  label: Text(
+                                    _isDownloadingInvoice
+                                        ? "Downloading..."
+                                        : "Download Invoice",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
 
-                      // 🚀 If cancelled, show "Check Refund Status" button
-                      if (isCancelled) ...[
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              // TODO: implement refund status check
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text('Checking refund status...')),
-                              );
-                              _checkRefundStatus(context, orderData!['_id']);
-                            },
-                            icon: const Icon(Icons.money, color: Colors.white),
-                            label: const Text(
-                              "Check Refund Status",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                          // Cancel Order Button
+                          if (!isCancelled &&
+                              orderData!['orderStatus'].toString() == 'pending')
+                            Expanded(
+                              child: Container(
+                                margin:
+                                    EdgeInsets.only(left: hasInvoice ? 8 : 0),
+                                child: ElevatedButton.icon(
+                                  onPressed: showCancelReasonSheet,
+                                  icon: const Icon(Icons.cancel,
+                                      color: Colors.white, size: 20),
+                                  label: const Text(
+                                    "Cancel Order",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red[600],
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
 
-                      const SizedBox(height: 10),
+                          // Check Refund Status Button
+                          if (isCancelled)
+                            Expanded(
+                              child: Container(
+                                margin:
+                                    EdgeInsets.only(left: hasInvoice ? 8 : 0),
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isCheckingRefund = true;
+                                    });
+                                    _checkRefundStatus(
+                                        context, orderData!['_id']);
+                                    showInfoSnackbar(
+                                        context, 'Checking refund status...');
+                                  },
+                                  icon: const Icon(Icons.money,
+                                      color: Colors.white, size: 20),
+                                  label: Text(
+                                    _isCheckingRefund
+                                        ? "Please wait..."
+                                        : "Check Refund",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),

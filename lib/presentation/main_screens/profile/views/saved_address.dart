@@ -111,13 +111,11 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                     duration: const Duration(milliseconds: 250),
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isDefault ? Colors.green.shade50 : Colors.white,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isDefault
-                            ? AppTheme.primaryColor
-                            : Colors.grey.shade300,
-                        width: isDefault ? 2.0 : 1.2,
+                        color: Colors.grey.shade300,
+                        width: 1.2,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -141,7 +139,6 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    if (isDefault) const SizedBox(width: 4),
                                     Icon(
                                       address['addressType']?.toLowerCase() ==
                                               'home'
@@ -151,15 +148,15 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                                   'work'
                                               ? Icons.work
                                               : Icons.location_on_outlined,
-                                      size: 20,
+                                      size: 25,
                                       color: Colors.black54,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 8),
                                     Text(
                                       (address['addressType'] ?? 'Home')
                                           .toString(),
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -167,78 +164,102 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                 ),
                                 Row(
                                   children: [
-                                    if (!isDefault)
-                                      OutlinedButton(
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.blue,
-                                          side: const BorderSide(
-                                              color: Colors.blue),
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 6, horizontal: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(6),
+                                    isDefault
+                                        ? OutlinedButton.icon(
+                                            onPressed: null, // disabled
+                                            icon: Icon(Icons.check_circle,
+                                                color: Colors.blue.shade600,
+                                                size: 16),
+                                            label: const Text(
+                                              "Default",
+                                              style: TextStyle(
+                                                color: Color(
+                                                    0xFF025192), // Same as your custom blue tone
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              disabledForegroundColor:
+                                                  Colors.blue.shade600,
+                                              side: BorderSide(
+                                                  color: Colors.blue.shade300),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 6,
+                                                      horizontal: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              backgroundColor:
+                                                  Colors.blue.shade50,
+                                            ),
+                                          )
+                                        : OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: Colors.blue,
+                                              side: const BorderSide(
+                                                  color: Colors.blue),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 6,
+                                                      horizontal: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                            ),
+                                            onPressed:
+                                                _defaultAddressLoadingId == id
+                                                    ? null
+                                                    : () async {
+                                                        setState(() =>
+                                                            _defaultAddressLoadingId =
+                                                                id);
+                                                        final res =
+                                                            await _addressService
+                                                                .setDefaultAddress(
+                                                                    id);
+                                                        if (!mounted) return;
+                                                        setState(() =>
+                                                            _defaultAddressLoadingId =
+                                                                null);
+                                                        if (res['success']) {
+                                                          showSuccessSnackbar(
+                                                              context,
+                                                              res['message']);
+                                                          _fetchUserAddresses();
+                                                        } else {
+                                                          showErrorSnackbar(
+                                                              context,
+                                                              res['message']);
+                                                        }
+                                                      },
+                                            child: _defaultAddressLoadingId ==
+                                                    id
+                                                ? Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: const [
+                                                      SizedBox(
+                                                          width: 14,
+                                                          height: 14,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      2)),
+                                                      SizedBox(width: 6),
+                                                      Text('Setting...',
+                                                          style: TextStyle(
+                                                              fontSize: 13)),
+                                                    ],
+                                                  )
+                                                : const Text('Set As Default',
+                                                    style: TextStyle(
+                                                        fontSize: 13)),
                                           ),
-                                        ),
-                                        onPressed: _defaultAddressLoadingId ==
-                                                id
-                                            ? null
-                                            : () async {
-                                                setState(() =>
-                                                    _defaultAddressLoadingId =
-                                                        id);
-                                                final res =
-                                                    await _addressService
-                                                        .setDefaultAddress(id);
-                                                if (!mounted) return;
-                                                setState(() =>
-                                                    _defaultAddressLoadingId =
-                                                        null);
-                                                // ScaffoldMessenger.of(context)
-                                                //     .showSnackBar(
-                                                //   SnackBar(
-                                                //       content:
-                                                //           Text(res['message'])),
-                                                // );
-                                                if (res['success']) {
-                                                  showCustomToast(
-                                                    context: context,
-                                                    title: "Success",
-                                                    message:
-                                                        "Address updated successfully!",
-                                                    isError: false,
-                                                  );
-                                                  _fetchUserAddresses();
-                                                } else {
-                                                  showCustomToast(
-                                                    context: context,
-                                                    title: "Error",
-                                                    message:
-                                                        "Failed to update address!",
-                                                    isError: true,
-                                                  );
-                                                }
-                                              },
-                                        child: _defaultAddressLoadingId == id
-                                            ? Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: const [
-                                                  SizedBox(
-                                                      width: 14,
-                                                      height: 14,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                              strokeWidth: 2)),
-                                                  SizedBox(width: 6),
-                                                  Text('Setting...',
-                                                      style: TextStyle(
-                                                          fontSize: 13)),
-                                                ],
-                                              )
-                                            : const Text('Set As Default',
-                                                style: TextStyle(fontSize: 13)),
-                                      ),
-                                    if (!isDefault) const SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     _squareIconButton(
                                       icon: Icons.edit,
                                       bgColor: Colors.green,
@@ -265,19 +286,11 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                             .deleteAddress(id);
                                         if (res['success']) {
                                           _fetchUserAddresses();
-                                          showCustomToast(
-                                            context: context,
-                                            title: "Success",
-                                            message:res['message'],
-                                            isError: false,
-                                          );
-                                        }else{
-                                          showCustomToast(
-                                            context: context,
-                                            title: "Error",
-                                            message:res['message'],
-                                            isError:true,
-                                          );
+                                          showSuccessSnackbar(
+                                              context, res['message']);
+                                        } else {
+                                          showErrorSnackbar(
+                                              context, res['message']);
                                         }
                                       },
                                     ),

@@ -189,8 +189,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                                     width: 100,
                                     height: 100,
                                     decoration: BoxDecoration(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12),
                                       color: Colors.green[50],
                                       image: image != null
                                           ? DecorationImage(
@@ -208,23 +207,20 @@ class _WishlistScreenState extends State<WishlistScreen>
                                       children: [
                                         Row(
                                           mainAxisAlignment:
-                                              MainAxisAlignment
-                                                  .spaceBetween,
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Expanded(
                                               child: Text(
                                                 title,
                                                 style: const TextStyle(
                                                   fontSize: 18,
-                                                  fontWeight:
-                                                      FontWeight.bold,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            _removingProductIds.contains(
-                                                    product['_id'])
+                                            _removingProductIds
+                                                    .contains(product['_id'])
                                                 ? const SizedBox(
                                                     height: 24,
                                                     width: 24,
@@ -236,24 +232,22 @@ class _WishlistScreenState extends State<WishlistScreen>
                                                   )
                                                 : InkWell(
                                                     onTap: () async {
-                                                      final id =
-                                                          product['_id'];
-                                                
+                                                      final id = product['_id'];
+
                                                       // Prevent double‑taps
                                                       if (_removingProductIds
-                                                          .contains(id))
-                                                        return;
-                                                
+                                                          .contains(id)) return;
+
                                                       setState(() =>
                                                           _removingProductIds
                                                               .add(id));
-                                                
+
                                                       try {
                                                         final msg =
                                                             await WishlistService
                                                                 .removeFromWishlist(
                                                                     id);
-                                                
+
                                                         if (mounted) {
                                                           setState(() {
                                                             wishlist.removeAt(
@@ -262,38 +256,21 @@ class _WishlistScreenState extends State<WishlistScreen>
                                                                 .remove(
                                                                     id); // stop the spinner
                                                           });
-                                                          showCustomToast(
-                                                            context:
-                                                                context,
-                                                            title:
-                                                                'Success',
-                                                            message: msg,
-                                                            isError: false,
-                                                          );
+                                                          showSuccessSnackbar(
+                                                              context, msg);
                                                         }
                                                       } catch (e) {
                                                         if (mounted) {
                                                           _removingProductIds
                                                               .remove(
                                                                   id); // stop the spinner only
-                                                          showCustomToast(
-                                                            context:
-                                                                context,
-                                                            title: 'Error',
-                                                            message: e
-                                                                .toString()
-                                                                .replaceFirst(
-                                                                    'Exception: ',
-                                                                    ''),
-                                                            isError: true,
-                                                          );
+                                                          showErrorSnackbar(
+                                                              context, '$e');
                                                         }
                                                       }
                                                     },
-                                                    child: Icon(
-                                                        Icons.favorite,
-                                                        color: Colors
-                                                            .red[400]),
+                                                    child: Icon(Icons.favorite,
+                                                        color: Colors.red[400]),
                                                   )
                                           ],
                                         ),
@@ -353,7 +330,9 @@ class _WishlistScreenState extends State<WishlistScreen>
                       setState(() {
                         _isAddingAllToCart = true;
                       });
+
                       bool allSuccess = true;
+                      bool anyFailure = false;
 
                       for (var item in wishlist) {
                         final product = item['productId'];
@@ -364,14 +343,16 @@ class _WishlistScreenState extends State<WishlistScreen>
                           final productId = product['_id'];
                           final priceId = priceObj['_id'];
 
-                          bool success = await CartService.addToCart(
+                          final result = await CartService.addToCart(
                             productId: productId,
                             priceId: priceId,
                             quantity: 1,
                           );
 
+                          final success = result['success'] as bool;
                           if (!success) {
                             allSuccess = false;
+                            anyFailure = true;
                           }
                         }
                       }
@@ -380,13 +361,13 @@ class _WishlistScreenState extends State<WishlistScreen>
                         _isAddingAllToCart = false;
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(allSuccess
-                              ? 'All items added to cart successfully'
-                              : 'Some items could not be added'),
-                        ),
-                      );
+                      if (allSuccess) {
+                        showSuccessSnackbar(
+                            context, 'All items added to cart successfully');
+                      } else if (anyFailure) {
+                        showErrorSnackbar(context,
+                            'Some items could not be added (maybe already in cart)');
+                      }
                     },
               backgroundColor:
                   _isAddingAllToCart ? Colors.grey : Colors.green[800],

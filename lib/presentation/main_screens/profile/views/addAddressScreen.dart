@@ -98,29 +98,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
       print('result:$result');
       if (result != null) {
-        showCustomToast(
-          context: context,
-          title: "Sucess",
-          message: "Address created successfully!",
-          isError: false,
-        );
+        showSuccessSnackbar(context, "Address created successfully!");
          Navigator.pop(context);
       } else {
-        showCustomToast(
-          context: context,
-          title: "Error",
-          message: "Failed to create address!",
-          isError: true,
-        );
+        showErrorSnackbar(context, "Failed to create address!");
          Navigator.pop(context);
       }
     } else {
-      showCustomToast(
-          context: context,
-          title: "Error",
-          message: "Please fill all required fields",
-          isError: true,
-        );
+        showErrorSnackbar(context, "Please fill all required fields");
          Navigator.pop(context);
     }
   }
@@ -147,27 +132,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
       print('update result: $result');
       if (result != null) {
-        showCustomToast(
-          context: context,
-          title: "Sucess",
-          message: "Address updated successfully!",
-          isError: false,
-        );
+        showSuccessSnackbar(context,"Address updated successfully!");
       } else {
-        showCustomToast(
-          context: context,
-          title: "Error",
-          message: "Failed to update address!",
-          isError: true,
-        );
+        showErrorSnackbar(context, "Failed to update address!");
       }
     } else {
-      showCustomToast(
-          context: context,
-          title: "Error",
-          message: "Please fill all required fields",
-          isError: true,
-        );
+        showErrorSnackbar(context,  "Please fill all required fields");
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:happy_farm/models/user_model.dart';
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
@@ -14,49 +15,49 @@ class PersonalInfoScreen extends StatefulWidget {
 
 class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
 
-  final _nameController = TextEditingController();
+  bool _isFetching = true; // for first screen build
+  bool _isSaving   = false; // for Save button
+
+  final _nameController  = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  String? userId;
 
   @override
   void initState() {
     super.initState();
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+
+    _nameController.text  = user.username     ?? '';
+    _emailController.text = user.email        ?? '';
+    _phoneController.text = user.phoneNumber  ?? '';
+
+    _isFetching = false; // done populating
   }
 
   Future<void> updatePersonalInfo() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isSaving = true);
 
-    final authService = UserService();
-    final result = await authService.updatePersonalInfo(
-      name: _nameController.text,
+    final result = await UserService().updatePersonalInfo(
+      name:  _nameController.text,
       email: _emailController.text,
       phone: _phoneController.text,
     );
 
-    setState(() {
-      _isLoading = false;
-    });
-
+    setState(() => _isSaving = false);
+    print('maaa$result');
     if (result.containsKey('error')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['error'])),
-      );
+      showErrorSnackbar(context, result['error']);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Details updated successfully!')),
-      );
+      showSuccessSnackbar(context, 'Details updated successfully!');
       Provider.of<UserProvider>(context, listen: false).updateUserDetails(
         UserModel(
-          username: result['name'],
-          email: result['email'],
-          phoneNumber: result['phone'],
+          username:    result['user']['name'],
+          email:       result['user']['email'],
+          phoneNumber: result['user']['phone'],
+          image: result['user']['image']
         ),
       );
     }
@@ -64,15 +65,13 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserProvider>(context, listen: false).user;
-    _nameController.text = user.username ?? "";
-    _emailController.text = user.email ?? "";
-    _phoneController.text = user.phoneNumber ?? "";
+    final primaryColor = AppTheme.primaryColor;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Personal Info"),
+        title: const Text('Personal Info'),
         centerTitle: true,
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -80,9 +79,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _nameController.text.isEmpty &&
-              _emailController.text.isEmpty &&
-              _phoneController.text.isEmpty
+      body: _isFetching
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(20),
@@ -94,7 +91,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       controller: _nameController,
                       icon: Icons.person,
                       label: 'Full Name',
-                      validator: (val) => val!.isEmpty ? 'Enter name' : null,
+                      validator: (v) =>
+                          v!.isEmpty ? 'Enter name' : null,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -102,8 +100,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       icon: Icons.email,
                       label: 'Email Address',
                       keyboardType: TextInputType.emailAddress,
-                      validator: (val) =>
-                          val!.contains('@') ? null : 'Enter valid email',
+                      validator: (v) =>
+                          v!.contains('@') ? null : 'Enter valid email',
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -111,23 +109,25 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       icon: Icons.phone,
                       label: 'Phone Number',
                       keyboardType: TextInputType.phone,
-                      validator: (val) =>
-                          val!.length >= 10 ? null : 'Enter valid phone number',
+                      validator: (v) =>
+                          v!.length >= 10 ? null : 'Enter valid phone number',
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton.icon(
-                      onPressed: _isLoading ? null : updatePersonalInfo,
-                      icon: _isLoading
+                      onPressed: _isSaving ? null : updatePersonalInfo,
+                      icon: _isSaving
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Icon(Icons.save),
                       label: const Text('Save Changes'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

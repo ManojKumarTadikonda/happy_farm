@@ -8,9 +8,9 @@ import 'package:happy_farm/presentation/main_screens/home_tab/views/filtered_pro
 import 'package:happy_farm/presentation/main_screens/home_tab/views/productdetails_screen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/widgets/shimmer_widget.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/product_model.dart'
-;
+import '../models/product_model.dart';
 import '../widgets/product_card.dart';
 import '../models/banner_model.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/services/category_service.dart';
@@ -27,7 +27,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   HomePageView _currentPage = HomePageView.home;
-  
 
   void _onMenuTap() {
     setState(() {
@@ -37,8 +36,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onCloseMenu() {
     setState(() {
+      selectedCatId = '';
       _currentPage = HomePageView.home;
+      _filteredProducts = [];
     });
+  }
+
+  void _showLoader() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54, // dim backdrop
+      builder: (_) => const Center(
+        child: SizedBox(
+          width: 80,
+          height: 80,
+          child: Card(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12))),
+            elevation: 6,
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _hideLoader() {
+    if (Navigator.canPop(context)) Navigator.pop(context);
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -121,22 +149,12 @@ class _HomeScreenState extends State<HomeScreen> {
           _currentPage = HomePageView.filtered;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No filtered products found.'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showErrorSnackbar(context, 'No filtered products found.');
       }
     } catch (e) {
-      debugPrint('Error fetching filtered products: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showErrorSnackbar(context, '$e');
     } finally {
+      _hideLoader();
       setState(() {
         _isLoading = false;
       });
@@ -165,22 +183,12 @@ class _HomeScreenState extends State<HomeScreen> {
           _currentPage = HomePageView.filtered;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No filtered products found.'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showErrorSnackbar(context, 'No filtered products found.');
       }
     } catch (e) {
-      debugPrint('Error fetching filtered products: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showErrorSnackbar(context, '$e');
     } finally {
+      _hideLoader();
       setState(() {
         _isLoading = false;
       });
@@ -203,12 +211,12 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _isLoading = true;
     });
-    filteredCategoryName=catName;
+    filteredCategoryName = catName;
     try {
       final products = await _productService.getProductsByCatName(catName);
       setState(() {
         _filteredProducts = products;
-         _currentPage = HomePageView.filtered;
+        _currentPage = HomePageView.filtered;
       });
     } catch (e) {
       debugPrint('Error fetching category products: $e');
@@ -255,10 +263,14 @@ class _HomeScreenState extends State<HomeScreen> {
               // Left: Menu or Close
               IconButton(
                 icon: Icon(
-                  _currentPage == HomePageView.menu ? Icons.close : Icons.menu,
+                  (_currentPage == HomePageView.menu ||
+                          _currentPage == HomePageView.filtered)
+                      ? Icons.close
+                      : Icons.menu,
                   color: Colors.black87,
                 ),
-                onPressed: _currentPage == HomePageView.menu
+                onPressed: (_currentPage == HomePageView.menu ||
+                        _currentPage == HomePageView.filtered)
                     ? _onCloseMenu
                     : _onMenuTap,
               ),
@@ -527,15 +539,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChangeEnd: (RangeValues values) {
                     Future.delayed(const Duration(milliseconds: 2000), () {
                       if (selectedCatId.isNotEmpty) {
+                        _showLoader();
                         _fetchProductsByPrice(
                           minPrice: values.start.round(),
                           maxPrice: values.end.round(),
                         );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Please select a category first.')),
-                        );
+                        showInfoSnackbar(
+                            context, 'Please select a category first.');
                       }
                     });
                   },
@@ -573,18 +584,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     return InkWell(
                       onTap: () {
                         if (selectedCatId.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text('Please select a category first.')),
-                          );
+                          showInfoSnackbar(
+                              context, 'Please select a category first.');
                           return;
                         }
 
                         setState(() {
                           _selectedRating = stars;
                         });
-
+                        _showLoader();
                         _fetchProductsByRating(rating: _selectedRating);
 
                         Future.delayed(const Duration(seconds: 2), () {
@@ -646,40 +654,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-
-        // Overlay full screen filtered products view (except appbar/bottom nav)
-        if (_filteredProducts.isNotEmpty)
-          Positioned.fill(
-            child: Container(
-              color: Colors.white, // Background for clarity
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Filtered Products",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _filteredProducts = [];
-                            });
-                          },
-                          child: const Text("Clear"),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -744,13 +718,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final visibleProducts =
-        _featuredProducts.take(_visibleFeaturedCount).toList();
-    final deviceHeight = MediaQuery.of(context).size.height;
-    final deviceWidth = MediaQuery.of(context).size.width;
+        _featuredProducts.reversed.take(_visibleFeaturedCount).toList();
 
-
-    final aspectRatio =
-        deviceWidth / (deviceHeight * 0.70);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    final crossAxisCount = isTablet ? 3 : 2;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
@@ -760,10 +732,10 @@ class _HomeScreenState extends State<HomeScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
-              childAspectRatio:aspectRatio,
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 5,
+              mainAxisSpacing: 5,
+              childAspectRatio: 0.75, // Fixed optimal ratio
             ),
             itemCount: visibleProducts.length,
             itemBuilder: (context, index) {
@@ -806,13 +778,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Center(child: Text('No products available.'));
     }
 
-    final visibleProducts = _allProducts.take(_visibleAllCount).toList();
-final deviceHeight = MediaQuery.of(context).size.height;
-    final deviceWidth = MediaQuery.of(context).size.width;
+    final visibleProducts = _allProducts.reversed.take(_visibleAllCount).toList();
 
-
-    final aspectRatio =
-        deviceWidth / (deviceHeight * 0.73);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    final crossAxisCount = isTablet ? 3 : 2;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
@@ -825,10 +795,10 @@ final deviceHeight = MediaQuery.of(context).size.height;
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 2,
-                    mainAxisSpacing: 2,
-                    childAspectRatio: aspectRatio,
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.75, // Fixed optimal ratio
                   ),
                   itemCount: visibleProducts.length,
                   itemBuilder: (context, index) {

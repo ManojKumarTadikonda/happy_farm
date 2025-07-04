@@ -7,6 +7,7 @@ import 'package:happy_farm/presentation/main_screens/profile/views/saved_address
 import 'package:happy_farm/presentation/main_screens/profile/views/update_password.dart';
 import 'package:happy_farm/presentation/main_screens/profile/widgets/custom_dialog.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
@@ -506,33 +507,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   if (success) {
                                     userProvider.updateProfileImage('');
                                     Navigator.of(context).pop();
-
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                            'Profile image deleted successfully'),
-                                        backgroundColor: Colors.green.shade600,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    );
+                                    showSuccessSnackbar(context, 'Profile image deleted successfully');
                                   } else {
                                     Navigator.of(context).pop();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                            'Failed to delete profile image'),
-                                        backgroundColor: Colors.red.shade600,
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    );
+                                    showErrorSnackbar(context,'Failed to delete profile image');
                                   }
                                 },
                                 icon:

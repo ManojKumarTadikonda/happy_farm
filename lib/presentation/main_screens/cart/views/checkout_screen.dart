@@ -114,7 +114,35 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     setState(() => _isLoading = value);
   }
 
+  void _showLoader() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54, // dim backdrop
+      builder: (_) => const Center(
+        child: SizedBox(
+          width: 80,
+          height: 80,
+          child: Card(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12))),
+            elevation: 6,
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _hideLoader() {
+    if (Navigator.canPop(context)) Navigator.pop(context);
+  }
+
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    _showLoader();
     final verified = await _orderService.verifyPayment(
       razorpayOrderId: response.orderId!,
       razorpayPaymentId: response.paymentId!,
@@ -123,7 +151,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
 
     if (!mounted) return;
-
+    _hideLoader();
     if (verified) {
       await CartService.clearCart();
       CustomSnackbar.showSuccess(
@@ -278,7 +306,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ],
                     ),
-
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
@@ -297,8 +324,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    if (isDefault) const SizedBox(width: 4),
-                                    const SizedBox(width: 6),
                                     Icon(
                                       address['addressType']?.toLowerCase() ==
                                               'home'
@@ -308,15 +333,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                   'work'
                                               ? Icons.work
                                               : Icons.location_on_outlined,
-                                      size: 20,
+                                      size: 25,
                                       color: Colors.black54,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 8),
                                     Text(
                                       (address['addressType'] ?? 'Home')
                                           .toString(),
                                       style: const TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -324,72 +349,102 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                                 Row(
                                   children: [
-                                    if (!isDefault)
-                                      OutlinedButton(
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.blue,
-                                          side: const BorderSide(
-                                              color: Colors.blue),
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 6, horizontal: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(6),
+                                    isDefault
+                                        ? OutlinedButton.icon(
+                                            onPressed: null, // disabled
+                                            icon: Icon(Icons.check_circle,
+                                                color: Colors.blue.shade600,
+                                                size: 16),
+                                            label: const Text(
+                                              "Default",
+                                              style: TextStyle(
+                                                color: Color(
+                                                    0xFF025192), // Same as your custom blue tone
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              disabledForegroundColor:
+                                                  Colors.blue.shade600,
+                                              side: BorderSide(
+                                                  color: Colors.blue.shade300),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 6,
+                                                      horizontal: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              backgroundColor:
+                                                  Colors.blue.shade50,
+                                            ),
+                                          )
+                                        : OutlinedButton(
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: Colors.blue,
+                                              side: const BorderSide(
+                                                  color: Colors.blue),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 6,
+                                                      horizontal: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                            ),
+                                            onPressed:
+                                                _defaultAddressLoadingId == id
+                                                    ? null
+                                                    : () async {
+                                                        setState(() =>
+                                                            _defaultAddressLoadingId =
+                                                                id);
+                                                        final res =
+                                                            await _addressService
+                                                                .setDefaultAddress(
+                                                                    id);
+                                                        if (!mounted) return;
+                                                        setState(() =>
+                                                            _defaultAddressLoadingId =
+                                                                null);
+                                                        if (res['success']) {
+                                                          showSuccessSnackbar(
+                                                              context,
+                                                              res['message']);
+                                                          _fetchUserAddresses();
+                                                        } else {
+                                                          showErrorSnackbar(
+                                                              context,
+                                                              res['message']);
+                                                        }
+                                                      },
+                                            child: _defaultAddressLoadingId ==
+                                                    id
+                                                ? Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: const [
+                                                      SizedBox(
+                                                          width: 14,
+                                                          height: 14,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      2)),
+                                                      SizedBox(width: 6),
+                                                      Text('Setting...',
+                                                          style: TextStyle(
+                                                              fontSize: 13)),
+                                                    ],
+                                                  )
+                                                : const Text('Set As Default',
+                                                    style: TextStyle(
+                                                        fontSize: 13)),
                                           ),
-                                        ),
-                                        onPressed: _defaultAddressLoadingId ==
-                                                id
-                                            ? null
-                                            : () async {
-                                                setState(() =>
-                                                    _defaultAddressLoadingId =
-                                                        id);
-                                                final res =
-                                                    await _addressService
-                                                        .setDefaultAddress(id);
-                                                if (!mounted) return;
-                                                setState(() =>
-                                                    _defaultAddressLoadingId =
-                                                        null);
-                                                if (res['success']) {
-                                                  showCustomToast(
-                                                    context: context,
-                                                    title: "Success",
-                                                    message:
-                                                        "Address updated successfully!",
-                                                    isError: false,
-                                                  );
-                                                  _fetchUserAddresses();
-                                                } else {
-                                                  showCustomToast(
-                                                    context: context,
-                                                    title: "Error",
-                                                    message:
-                                                        "Failed to update address!",
-                                                    isError: true,
-                                                  );
-                                                }
-                                              },
-                                        child: _defaultAddressLoadingId == id
-                                            ? Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: const [
-                                                  SizedBox(
-                                                      width: 14,
-                                                      height: 14,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                              strokeWidth: 2)),
-                                                  SizedBox(width: 6),
-                                                  Text('Setting...',
-                                                      style: TextStyle(
-                                                          fontSize: 13)),
-                                                ],
-                                              )
-                                            : const Text('Set As Default',
-                                                style: TextStyle(fontSize: 13)),
-                                      ),
-                                    if (!isDefault) const SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     _squareIconButton(
                                       icon: Icons.edit,
                                       bgColor: Colors.green,
@@ -416,19 +471,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                             .deleteAddress(id);
                                         if (res['success']) {
                                           _fetchUserAddresses();
-                                          showCustomToast(
-                                            context: context,
-                                            title: "Success",
-                                            message: res['message'],
-                                            isError: false,
-                                          );
+                                          showSuccessSnackbar(
+                                              context, res['message']);
                                         } else {
-                                          showCustomToast(
-                                            context: context,
-                                            title: "Error",
-                                            message: res['message'],
-                                            isError: true,
-                                          );
+                                          showSuccessSnackbar(
+                                              context, res['message']);
                                         }
                                       },
                                     ),

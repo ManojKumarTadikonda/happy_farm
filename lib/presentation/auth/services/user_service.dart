@@ -227,6 +227,7 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
+        print(response.body);
         return jsonDecode(response.body);
       } else {
         return {

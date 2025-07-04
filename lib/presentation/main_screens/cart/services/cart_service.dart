@@ -5,8 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:happy_farm/presentation/main_screens/cart/models/cart_model.dart';
 
 class CartService {
-  static String? baseUrl =
-      '${dotenv.env['BASE_URL']}/cart';
+  static String? baseUrl = '${dotenv.env['BASE_URL']}/cart';
 
   static Future<List<CartItem>> fetchCart() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -42,10 +41,10 @@ class CartService {
     }
   }
 
-static Future<String> deleteCartItem(String cartItemId) async {
-    final prefs  = await SharedPreferences.getInstance();
-    final token  = prefs.getString('token');
-    final url    = Uri.parse('$baseUrl/$cartItemId');
+  static Future<String> deleteCartItem(String cartItemId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final url = Uri.parse('$baseUrl/$cartItemId');
 
     final response = await http.delete(
       url,
@@ -64,15 +63,13 @@ static Future<String> deleteCartItem(String cartItemId) async {
     }
   }
 
-  static Future<bool> addToCart({
+  static Future<Map<String, dynamic>> addToCart({
     required String productId,
     required String priceId,
     required int quantity,
   }) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-
-    if (token == null) return false;
 
     final body = {
       "productId": productId,
@@ -81,8 +78,7 @@ static Future<String> deleteCartItem(String cartItemId) async {
     };
 
     final response = await http.post(
-      Uri.parse(
-          "$baseUrl/add"), // Make sure this URL matches your actual backend route
+      Uri.parse("$baseUrl/add"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
@@ -91,7 +87,13 @@ static Future<String> deleteCartItem(String cartItemId) async {
     );
 
     print('🛒 addToCart response: ${response.statusCode} - ${response.body}');
-    return response.statusCode == 201;
+
+    final Map<String, dynamic> data = json.decode(response.body);
+
+    return {
+      'success': data['success'] ?? false,
+      'message': data['message'] ?? 'Unknown error',
+    };
   }
 
   //Get Cart Item by ID
@@ -152,7 +154,8 @@ static Future<String> deleteCartItem(String cartItemId) async {
       throw Exception(result['message'] ?? 'Failed to update cart item');
     }
   }
-    /// Clears the user's cart
+
+  /// Clears the user's cart
   static Future<bool> clearCart() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String? token = prefs.getString('token');
@@ -172,4 +175,3 @@ static Future<String> deleteCartItem(String cartItemId) async {
     return response.statusCode == 200;
   }
 }
-

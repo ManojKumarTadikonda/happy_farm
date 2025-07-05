@@ -2,32 +2,46 @@ name: Build Flutter APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     name: Build APK
-    runs-on: ubuntu-latest  # ✅ Ubuntu is fine, we just need to accept licenses
+    runs-on: ubuntu-latest          # stay on Ubuntu; fastest & simplest
 
     steps:
-      - uses: actions/checkout@v2
+      # 1️⃣  Check out your code
+      - uses: actions/checkout@v4
 
+      # 2️⃣  Install Flutter 3.29.3 (includes Dart 3.7.x)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.3'
+          flutter-version: "3.29.3"
 
-      - name: Install dependencies
+      # 3️⃣  Install Android SDK + the NDK version Gradle wants, and accept licences
+      - name: Install Android SDK components & accept licences
+        run: |
+          # Path where the SDK is pre‑installed on the runner
+          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          
+          # ⬇️  Grab the exact NDK version Gradle complains about
+          sdkmanager "ndk;29.0.13113456"
+
+          # ✅  Accept every pending licence non‑interactively
+          yes | sdkmanager --licenses
+
+      # 4️⃣  Get Dart/Flutter packages
+      - name: flutter pub get
         run: flutter pub get
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
-
+      # 5️⃣  Build your release APK
       - name: Build release APK
         run: flutter build apk --release
 
-      - name: Upload APK as artifact
+      # 6️⃣  Upload the APK as an artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk

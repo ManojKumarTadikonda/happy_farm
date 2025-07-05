@@ -1,4 +1,4 @@
-name: Build Flutter APK (Windows)
+name: Build Flutter APK
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build APK
-    runs-on: windows-latest  
+    runs-on: ubuntu-latest  # ✅ Ubuntu is fine, we just need to accept licenses
 
     steps:
       - uses: actions/checkout@v2
@@ -22,8 +22,7 @@ jobs:
         run: flutter pub get
 
       - name: Accept Android SDK licenses
-        shell: cmd
-        run: yes | "C:\Users\runneradmin\AppData\Local\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" --licenses
+        run: yes | sdkmanager --licenses
 
       - name: Build release APK
         run: flutter build apk --release
@@ -32,4 +31,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
-          path: build\app\outputs\flutter-apk\app-release.apk  # ✅ Use Windows path
+          path: build/app/outputs/flutter-apk/app-release.apk

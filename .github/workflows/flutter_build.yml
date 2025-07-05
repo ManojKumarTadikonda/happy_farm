@@ -1,66 +1,46 @@
-name: "Build APK"
+name: Build Flutter APK
 
 on:
   push:
-    branches: [main]  # or dev, or any branch you want
-  pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
-    name: Build Android APK
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout source code
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # 2. Set up Java
-      - name: Set Up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '21.0.6'
-
-      # 3. Set up Flutter
-      - name: Set Up Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.29.3'
-          channel: 'stable'
 
-      # 4. Install dependencies
-      - name: Install Dependencies
+      # 🛠️ Accept licenses and install NDK
+      - name: Accept Android SDK Licenses and Install NDK
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          
+          echo "📦 Installing required NDK version..."
+          yes | sdkmanager "ndk;29.0.13113456"
+          
+          echo "✅ Accepting all licenses..."
+          yes | sdkmanager --licenses
+
+          echo "📜 Installed SDK packages:"
+          sdkmanager --list
+
+      - name: Get Flutter dependencies
         run: flutter pub get
 
-      # 5. Decode Keystore and create key.properties
-      - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
-
-      - name: Create key.properties
-        run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=keystore.jks" >> android/key.properties
-
-      # 6. Build APK
       - name: Build APK
         run: flutter build apk --release
 
-      # 7. Extract version from pubspec.yaml
-      - name: Extract version from pubspec.yaml
-        id: extract_version
-        run: |
-          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          echo "VERSION=$version" >> $GITHUB_ENV
-
-      # 8. Upload artifact to GitHub Release
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
         with:
-          artifacts: build/app/outputs/flutter-apk/app-release.apk
-          tag: v${{ env.VERSION }}
-          token: ${{ secrets.TOKEN }}
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk

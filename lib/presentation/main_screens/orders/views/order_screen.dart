@@ -245,7 +245,7 @@ class OrderCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "ORD${order['_id'].toString().substring(0, 6).toUpperCase()}",
+                    order['orderId'].toString(),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

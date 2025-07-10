@@ -58,7 +58,7 @@ class UserService {
       );
 
       final data = jsonDecode(response.body);
-      if (response.statusCode == 201 && data['token'] != null) {
+      if (data['success'] == true && data['token']!=null){
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('userId', data['user']['_id']);

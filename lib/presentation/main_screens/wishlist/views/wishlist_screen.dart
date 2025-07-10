@@ -5,6 +5,7 @@ import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.
     show CartService;
 import 'package:happy_farm/presentation/main_screens/wishlist/services/whislist_service.dart';
 import 'package:happy_farm/presentation/main_screens/wishlist/widgets/wishListShimmer.dart';
+import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
 
 class WishlistScreen extends StatefulWidget {
@@ -60,7 +61,7 @@ class _WishlistScreenState extends State<WishlistScreen>
       appBar: AppBar(
         elevation: 0,
         title: const Text('My Wishlist'),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: AppTheme.primaryColor,
         automaticallyImplyLeading: false,
         actions: [
           Center(
@@ -365,7 +366,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                         showSuccessSnackbar(
                             context, 'All items added to cart successfully');
                       } else if (anyFailure) {
-                        showErrorSnackbar(context,
+                        showSuccessSnackbar(context,
                             'Some items could not be added (maybe already in cart)');
                       }
                     },

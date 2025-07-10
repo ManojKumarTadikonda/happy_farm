@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:happy_farm/presentation/main_screens/main_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:happy_farm/presentation/auth/widgets/custom_snackba_msg.dart';
 import 'package:happy_farm/presentation/main_screens/cart/models/cart_model.dart';
 import 'package:happy_farm/presentation/main_screens/cart/views/cart_screen.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/services/banner_service.dart';
@@ -8,6 +9,7 @@ import 'package:happy_farm/presentation/main_screens/home_tab/views/filtered_pro
 import 'package:happy_farm/presentation/main_screens/home_tab/views/productdetails_screen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/widgets/shimmer_widget.dart';
+import 'package:happy_farm/presentation/main_screens/profile/widgets/custom_dialog.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
@@ -239,102 +241,118 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Navigate to MainScreen instead of going back
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-          (route) => false, // remove all previous routes
-        );
-        return false; // prevent default back behavior
-      },
-      child: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 1, // Small shadow to separate AppBar from body
-          automaticallyImplyLeading: false,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Left: Menu or Close
-              IconButton(
-                icon: Icon(
-                  (_currentPage == HomePageView.menu ||
-                          _currentPage == HomePageView.filtered)
-                      ? Icons.close
-                      : Icons.menu,
-                  color: Colors.black87,
-                ),
-                onPressed: (_currentPage == HomePageView.menu ||
+@override
+Widget build(BuildContext context) {
+  return WillPopScope(
+    onWillPop: () async {
+      final shouldExit = await showDialog<bool>(
+        context: context,
+        builder: (context) => CustomConfirmDialog(
+          title: "Are you sure?",
+          message: "Do you really want to exit the app?",
+          onYes: () {
+            Navigator.of(context).pop(true); // signal to exit
+          },
+          onNo: () {
+            Navigator.of(context).pop(false); // cancel
+          },
+          msg1: 'Cancel',
+          msg2: 'Exit',
+        ),
+      );
+
+      if (shouldExit == true) {
+        // Exit the app
+        SystemNavigator.pop(); // for Android
+        // exit(0); // optional: forces kill (not recommended for production)
+      }
+
+      return false; // Always return false to prevent auto pop
+    },
+    child: Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1, // Small shadow to separate AppBar from body
+        automaticallyImplyLeading: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Left: Menu or Close
+            IconButton(
+              icon: Icon(
+                (_currentPage == HomePageView.menu ||
                         _currentPage == HomePageView.filtered)
-                    ? _onCloseMenu
-                    : _onMenuTap,
+                    ? Icons.close
+                    : Icons.filter_list,
+                color: Colors.black87,
               ),
+              onPressed: (_currentPage == HomePageView.menu ||
+                      _currentPage == HomePageView.filtered)
+                  ? _onCloseMenu
+                  : _onMenuTap,
+            ),
 
-              // Center: Icon + Text
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/images/sabba krish logo.png',
-                    width: 140,
-                    height: 70,
-                  ),
-                ],
-              ),
+            // Center: Icon + Text
+            Row(
+              children: [
+                Image.asset(
+                  'assets/images/sabba krish logo.png',
+                  width: 140,
+                  height: 70,
+                ),
+              ],
+            ),
 
-              // Right: Cart Icon with badge
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.shopping_cart_outlined,
-                        color: Colors.black87),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CartScreen(userId: userId!),
+            // Right: Cart Icon with badge
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart_outlined,
+                      color: Colors.black87),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CartScreen(userId: userId!),
+                      ),
+                    );
+                  },
+                ),
+                if (cartItemCount > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints:
+                          const BoxConstraints(minWidth: 20, minHeight: 20),
+                      child: Text(
+                        '$cartItemCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
                         ),
-                      );
-                    },
-                  ),
-                  if (cartItemCount > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints:
-                            const BoxConstraints(minWidth: 20, minHeight: 20),
-                        child: Text(
-                          '$cartItemCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        backgroundColor: const Color(0xFFF5F5F5),
-        body: SafeArea(
-          child: _buildBodyContent(),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
-    );
-  }
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: _buildBodyContent(),
+      ),
+    ),
+  );
+}
 
   Widget _buildLoadingView() {
     return const ShimmerHomeScreen();

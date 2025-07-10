@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/auth/widgets/custom_snackba_msg.dart';
 import 'package:happy_farm/presentation/main_screens/cart/models/cart_model.dart';
+import 'package:happy_farm/presentation/main_screens/cart/views/cart_screen.dart';
 import 'package:happy_farm/presentation/main_screens/profile/views/addAddressScreen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/views/ordersuccesspage.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
@@ -10,6 +12,7 @@ import 'package:happy_farm/presentation/main_screens/orders/services/order_servi
 import 'package:happy_farm/presentation/main_screens/profile/widgets/custom_dialog.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
+import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -168,9 +171,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
+  Future<void> _handlePaymentError(PaymentFailureResponse response) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId=prefs.getString('userId');
     CustomSnackbar.showError(
-        context, "Error", 'Payment failed: ${response.message}');
+        context, "Error", 'Payment failed:Please try again later');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => CartScreen(userId: userId ?? '' ,)),
+    );    
     _loadUserData();
     _fetchUserAddresses();
     _isLoading = false;

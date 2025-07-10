@@ -3,6 +3,7 @@ import 'package:happy_farm/presentation/main_screens/home_tab/models/product_mod
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/main_screens/cart/views/cart_screen.dart';
 import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.dart';
+import 'package:happy_farm/presentation/main_screens/home_tab/services/product_service.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/services/review_service.dart';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/presentation/main_screens/wishlist/services/whislist_service.dart';
@@ -10,6 +11,7 @@ import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+//
 
 class ProductDetails extends StatefulWidget {
   final dynamic product;
@@ -33,16 +35,19 @@ class _ProductDetailsState extends State<ProductDetails> {
   bool isLoadingCart = false;
   bool isSubmittingReview = false;
   bool isCartStatusLoading = false;
+  bool isLoadingProductDetails = true; // Add this for product refresh loading
   String? userId;
+
+  // Store the current product data
+  dynamic currentProduct;
 
   @override
   void initState() {
     super.initState();
-    fetchReviews();
-    checkWishlistStatus();
-    checkCartStatus(getProductId());
-    isCart = getIsCart();
+    currentProduct = widget.product; // Initialize with passed product
     _loadUser();
+    _refreshProductDetails(); // Fetch fresh product data
+    fetchReviews();
   }
 
   void _showLimitDialog(BuildContext context, String title, String message) {
@@ -70,57 +75,87 @@ class _ProductDetailsState extends State<ProductDetails> {
     });
   }
 
+  // Add this method to refresh product details
+  Future<void> _refreshProductDetails() async {
+    setState(() {
+      isLoadingProductDetails = true;
+    });
+
+    try {
+      // Call your API to get fresh product data
+      final productService = ProductService();
+      final freshProduct = await productService.getProductById(getProductId());
+
+      setState(() {
+        currentProduct = freshProduct;
+        isWish = freshProduct.isAddedToWishlist ?? false;
+        isCart = freshProduct.isAddedToCart ?? false;
+        isLoadingProductDetails = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoadingProductDetails = false;
+      });
+      print('Error refreshing product details: $e');
+      // Keep using the original product data if refresh fails
+      setState(() {
+        isWish = getIsWishList();
+        isCart = getIsCart();
+      });
+    }
+  }
+
   String getProductId() {
-    return widget.product.id;
+    return currentProduct.id;
   }
 
   String getProductName() {
-    return widget.product.name;
+    return currentProduct.name;
   }
 
   String? getProductDescription() {
-    if (widget.product is FeaturedProduct || widget.product is AllProduct) {
-      return widget.product.description;
-    } else if (widget.product is FilterProducts) {
-      return widget.product.description;
+    if (currentProduct is FeaturedProduct || currentProduct is AllProduct) {
+      return currentProduct.description;
+    } else if (currentProduct is FilterProducts) {
+      return currentProduct.description;
     }
     return null;
   }
 
   List<String> getProductImages() {
-    return widget.product.images;
+    return currentProduct.images;
   }
 
   String getCategoryName() {
-    if (widget.product is AllProduct) {
-      return widget.product.catName;
-    } else if (widget.product is FilterProducts) {
-      return widget.product.catName;
+    if (currentProduct is AllProduct) {
+      return currentProduct.catName;
+    } else if (currentProduct is FilterProducts) {
+      return currentProduct.catName;
     } else {
-      return widget.product.category ?? 'Unknown';
+      return currentProduct.category ?? 'Unknown';
     }
   }
 
   String? getSubCategoryName() {
-    if (widget.product is AllProduct) {
-      return widget.product.subCatName;
-    } else if (widget.product is FilterProducts) {
-      return widget.product.subCatName;
+    if (currentProduct is AllProduct) {
+      return currentProduct.subCatName;
+    } else if (currentProduct is FilterProducts) {
+      return currentProduct.subCatName;
     } else {
-      return widget.product.subCategory ?? 'Unkown';
+      return currentProduct.subCategory ?? 'Unknown';
     }
   }
 
   bool getIsWishList() {
-    return widget.product.isAddedToWishlist ?? false;
+    return currentProduct.isAddedToWishlist ?? false;
   }
 
   bool getIsCart() {
-    return widget.product.isAddedToCart ?? false;
+    return currentProduct.isAddedToCart ?? false;
   }
 
   List<dynamic> getProductPrices() {
-    return widget.product.prices;
+    return currentProduct.prices;
   }
 
   Future<void> checkWishlistStatus() async {
@@ -135,14 +170,12 @@ class _ProductDetailsState extends State<ProductDetails> {
       setState(() {
         isWish = isProductInWishlist;
       });
-      setState(() {
-        isLoadingWish = false;
-      });
     } catch (e) {
+      print('Error checking wishlist status: $e');
+    } finally {
       setState(() {
         isLoadingWish = false;
       });
-      print('Error checking wishlist status: $e');
     }
   }
 
@@ -151,9 +184,13 @@ class _ProductDetailsState extends State<ProductDetails> {
       setState(() {
         isCartStatusLoading = true;
       });
-
       print(getIsCart());
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      setState(() {
+        isCartStatusLoading = false;
+      });
+    }
   }
 
   Future<void> fetchReviews() async {
@@ -239,11 +276,10 @@ class _ProductDetailsState extends State<ProductDetails> {
     if (success) {
       setState(() {
         isCart = true;
-        isLoadingCart = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message), // ✅ Show success message
+          content: Text(message),
           action: SnackBarAction(
             label: "GO TO CART",
             textColor: Colors.amber,
@@ -266,11 +302,12 @@ class _ProductDetailsState extends State<ProductDetails> {
         ),
       );
     } else {
-      setState(() {
-        isLoadingCart = false;
-      });
-      showErrorSnackbar(context, message); // ✅ Show error message
+      showErrorSnackbar(context, message);
     }
+
+    setState(() {
+      isLoadingCart = false;
+    });
   }
 
   @override
@@ -298,50 +335,54 @@ class _ProductDetailsState extends State<ProductDetails> {
         ),
       ),
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProductImageGallery(),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+      body: isLoadingProductDetails
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    getProductName(),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                  _buildProductImageGallery(),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          getProductName(),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _buildVariantSelector(),
+                        const SizedBox(height: 10),
+                        _buildPriceInfo(price),
+                        const SizedBox(height: 8),
+                        Text('${price.quantity} ${price.type}',
+                            style: const TextStyle(fontSize: 16)),
+                        const SizedBox(height: 8),
+                        Text(
+                          price.countInStock > 0 ? 'IN STOCK' : 'OUT OF STOCK',
+                          style: TextStyle(
+                              color: price.countInStock > 0
+                                  ? AppTheme.primaryColor
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildQuantityAndCartSection(userId!, price),
+                        const SizedBox(height: 24),
+                        _buildInfoCards(),
+                        const SizedBox(height: 20),
+                        _buildReviewsSection(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  _buildVariantSelector(),
-                  const SizedBox(height: 10),
-                  _buildPriceInfo(price),
-                  const SizedBox(height: 8),
-                  Text('${price.quantity} ${price.type}',
-                      style: const TextStyle(fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Text(
-                    price.countInStock > 0 ? 'IN STOCK' : 'OUT OF STOCK',
-                    style: TextStyle(
-                        color: price.countInStock > 0
-                            ? AppTheme.primaryColor
-                            : Colors.red,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildQuantityAndCartSection(userId!, price),
-                  const SizedBox(height: 24),
-                  _buildInfoCards(),
-                  const SizedBox(height: 20),
-                  _buildReviewsSection(),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -381,7 +422,9 @@ class _ProductDetailsState extends State<ProductDetails> {
           right: 16,
           child: GestureDetector(
             onTap: () {
-              isWish ? removeWishlist() : addWishList();
+              if (!isLoadingWish) {
+                isWish ? removeWishlist() : addWishList();
+              }
             },
             child: Container(
               height: 40,
@@ -392,7 +435,7 @@ class _ProductDetailsState extends State<ProductDetails> {
               ),
               child: Center(
                 child: isLoadingWish
-                    ? SizedBox(
+                    ? const SizedBox(
                         key: ValueKey('loading'),
                         height: 16,
                         width: 16,
@@ -403,14 +446,14 @@ class _ProductDetailsState extends State<ProductDetails> {
                         ),
                       )
                     : AnimatedSwitcher(
-                        duration: Duration(milliseconds: 300),
+                        duration: const Duration(milliseconds: 300),
                         transitionBuilder: (child, animation) {
                           return ScaleTransition(
                               scale: animation, child: child);
                         },
                         child: AnimatedScale(
                           scale: isWish ? 1.2 : 1.0,
-                          duration: Duration(milliseconds: 200),
+                          duration: const Duration(milliseconds: 200),
                           curve: Curves.easeOut,
                           child: Icon(
                             isWish ? Icons.favorite : Icons.favorite_border,
@@ -508,7 +551,7 @@ class _ProductDetailsState extends State<ProductDetails> {
               style: const TextStyle(fontSize: 16),
             ),
             IconButton(
-              icon: Icon(Icons.add_circle_outline),
+              icon: const Icon(Icons.add_circle_outline),
               color: quantity == price.countInStock
                   ? Colors.grey
                   : AppTheme.primaryColor,
@@ -526,21 +569,37 @@ class _ProductDetailsState extends State<ProductDetails> {
           ],
         ),
         ElevatedButton.icon(
-          onPressed: () {
+          onPressed: price.countInStock == 0 || isLoadingCart
+              ? null
+              : () {
+                  isCart
+                      ? Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (builder) => CartScreen(userId: userId),
+                          ),
+                        )
+                      : addToCart();
+                },
+          icon: isLoadingCart
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Icon(Icons.shopping_cart, color: Colors.white),
+          label: Text(
+            price.countInStock > 0 ?
             isCart
-                ? Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (builder) => CartScreen(userId: userId),
-                    ),
-                  )
-                : addToCart();
-          },
-          icon: const Icon(Icons.shopping_cart, color: Colors.white),
-          label: Text(isCart
-              ? "Go to Cart"
-              : isLoadingCart
-                  ? "Adding..."
-                  : "Add To Cart"),
+                ? "Go to Cart"
+                : isLoadingCart
+                    ? "Adding..."
+                    : "Add To Cart"
+            :'Out of Stock',
+            style: const TextStyle(color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -758,12 +817,13 @@ class _ProductDetailsState extends State<ProductDetails> {
                       );
                     }).toList(),
                   ),
+        const SizedBox(height: 10),
       ],
     );
   }
 
   Widget _buildProfileAvatar(String name) {
-    String? profileImageUrl = null;
+    String? profileImageUrl;
     if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
       return CircleAvatar(
         radius: 24,
@@ -838,7 +898,7 @@ class _ProductDetailsState extends State<ProductDetails> {
             ),
             child: SingleChildScrollView(
               child: Column(
-                mainAxisSize: MainAxisSize.min, // important to wrap height
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(

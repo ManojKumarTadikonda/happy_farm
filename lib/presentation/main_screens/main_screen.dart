@@ -29,8 +29,8 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _selectedIndex = widget.selectedIndex;
     _checkLoginStatus();
-    getUser();
   }
+
   Future<void> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('userId');
@@ -57,6 +57,11 @@ class _MainScreenState extends State<MainScreen> {
       _isLoggedIn = token != null && userId != null;
       _isCheckingLogin = false;
     });
+
+    // Only fetch user data if logged in
+    if (_isLoggedIn) {
+      await getUser();
+    }
   }
 
   void _onItemTapped(int index) {
@@ -65,33 +70,30 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+
+  Widget _getScreen(int index) {
+    switch (index) {
+      case 0:
+        return const HomeScreen();
+      case 1:
+        return const SearchScreen();
+      case 2:
+        return const WishlistScreen() ;
+      case 3:
+        return const OrdersScreen() ;
+      case 4:
+        return const ProfileScreen();
+      default:
+        return const HomeScreen();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isCheckingLogin) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
-    }
-
-    if (!_isLoggedIn) {
-      return const LoginScreen(); // Navigate to LoginScreen directly
-    }
-
-    Widget _getScreen(int index) {
-      switch (index) {
-        case 0:
-          return const HomeScreen();
-        case 1:
-          return const SearchScreen();
-        case 2:
-          return const WishlistScreen();
-        case 3:
-          return const OrdersScreen();
-        case 4:
-          return const ProfileScreen();
-        default:
-          return const HomeScreen();
-      }
     }
 
     return Scaffold(

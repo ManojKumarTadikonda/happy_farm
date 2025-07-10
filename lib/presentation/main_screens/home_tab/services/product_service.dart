@@ -17,9 +17,8 @@ class ProductService {
   }
 
   Future<List<AllProduct>> getProducts() async {
-    final headers = await getHeaders();
     final uri = Uri.parse(baseUrl!);
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri,);
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
@@ -32,10 +31,10 @@ class ProductService {
   }
 
   Future<List<FilterProducts>> getProductsByCatName(String catName) async {
-    final headers = await getHeaders();
+
     final uri = Uri.parse('$baseUrl/catName?catName=$catName');
     print("catname:$catName");
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri, );
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       final List<dynamic> productsJson = jsonResponse['products'];
@@ -48,18 +47,17 @@ class ProductService {
 
   Future<List<FilterProducts>> getProductsByCatId(String catId,
       {int page = 1, int perPage = 10}) async {
-    final headers = await getHeaders();
     final uri = Uri.parse('$baseUrl/catId/$catId?page=$page&perPage=$perPage');
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri,);
     return json.decode(response.body);
   }
 
   Future<List<FilterProducts>> getProductsBySubCatId(String subCatId,
       {int page = 1, int perPage = 10}) async {
-    final headers = await getHeaders();
+    
     final uri = Uri.parse(
         '$baseUrl/subCatId?subCatId=$subCatId&page=$page&perPage=$perPage');
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri, );
     return json.decode(response.body);
   }
 
@@ -69,7 +67,6 @@ class ProductService {
     String? catId,
     String? subCatId,
   }) async {
-    final headers = await getHeaders();
     final queryParams = {
       'minPrice': minPrice.toString(),
       'maxPrice': maxPrice.toString(),
@@ -78,7 +75,7 @@ class ProductService {
     };
     final uri = Uri.parse('$baseUrl/filterByPrice')
         .replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri,);
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       final List<dynamic> productsJson = jsonResponse['products'];
@@ -94,7 +91,6 @@ class ProductService {
     String? catId,
     String? subCatId,
   }) async {
-    final headers = await getHeaders();
     final queryParams = {
       'rating': rating.toString(),
       if (catId != null) 'catId': catId,
@@ -102,7 +98,7 @@ class ProductService {
     };
     final uri =
         Uri.parse('$baseUrl/rating').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri,);
     if (response.statusCode == 200) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       final List<dynamic> productsJson = jsonResponse['products'];
@@ -114,16 +110,14 @@ class ProductService {
   }
 
   Future<Map<String, dynamic>> getProductCount() async {
-    final headers = await getHeaders();
     final uri = Uri.parse('$baseUrl/get/count');
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri,);
     return json.decode(response.body);
   }
 
   Future<List<FeaturedProduct>> getFeaturedProducts() async {
-    final headers = await getHeaders();
     final uri = Uri.parse('$baseUrl/featured');
-    final response = await http.get(uri, headers: headers);
+    final response = await http.get(uri,);
     print(response.body);
     if (response.statusCode == 200) {
       final List<dynamic> jsonResponse = json.decode(response.body);

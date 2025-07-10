@@ -314,7 +314,7 @@ Widget build(BuildContext context) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CartScreen(userId: userId!),
+                        builder: (context) => CartScreen(),
                       ),
                     );
                   },

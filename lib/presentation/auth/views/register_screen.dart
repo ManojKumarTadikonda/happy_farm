@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/presentation/main_screens/profile/views/privacypolicyscreen.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/presentation/auth/views/login_screen.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
 import 'package:happy_farm/presentation/auth/widgets/custom_snackba_msg.dart';
-
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
@@ -21,6 +21,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   bool _obscurePassword = true;
+  bool _acceptTerms = false;
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
@@ -56,6 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       CustomSnackbar.showError(context, "Error", errorMessage);
     }
   }
+
   InputDecoration _inputDecoration(String label, IconData prefixIcon,
       {bool isPassword = false}) {
     return InputDecoration(
@@ -169,6 +171,46 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _acceptTerms,
+                        onChanged: (value) {
+                          setState(() {
+                            _acceptTerms = value ?? false;
+                          });
+                        },
+                        activeColor: AppTheme.primaryColor,
+                      ),
+                      Flexible(
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            const Text('I accept the '),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PrivacyPolicyScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Terms & Conditions',
+                                style: TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -208,9 +250,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: _isLoading ? null : _submitForm,
+                      onPressed: _isLoading || !_acceptTerms ? null : _submitForm,
                       child: _isLoading
-                          ?Text(
+                          ? Text(
                               'Loading ...',
                               style: TextStyle(
                                   fontSize: 17, fontWeight: FontWeight.w600),

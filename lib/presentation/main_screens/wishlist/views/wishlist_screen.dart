@@ -7,6 +7,8 @@ import 'package:happy_farm/presentation/main_screens/wishlist/services/whislist_
 import 'package:happy_farm/presentation/main_screens/wishlist/widgets/wishListShimmer.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
+import 'package:happy_farm/widgets/without_login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -22,10 +24,10 @@ class _WishlistScreenState extends State<WishlistScreen>
   late Future<void> wishlistFuture;
   bool _isAddingAllToCart = false;
   Set<String> _removingProductIds = {};
+  bool _isLoggedIn = false;
 
   // Enhanced color scheme
   static const Color accentGreen = Color(0xFF4CAF50);
-
   static const Color veryLightGreen = Color(0xFFE8F5E8);
   static const Color textDark = Color(0xFF2C3E50);
   static const Color textMedium = Color(0xFF546E7A);
@@ -37,15 +39,40 @@ class _WishlistScreenState extends State<WishlistScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    wishlistFuture = loadWishlist();
+    wishlistFuture = _initializeScreen();
+  }
+
+  Future<void> _initializeScreen() async {
+    // Check login status first
+    await _checkLoginStatus();
+
+    // Only load wishlist if user is logged in
+    if (_isLoggedIn) {
+      await loadWishlist();
+    }
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final userId = prefs.getString('userId');
+
+    setState(() {
+      _isLoggedIn = token != null && userId != null;
+    });
   }
 
   Future<void> loadWishlist() async {
-    final data = await WishlistService.fetchWishlist();
-    setState(() {
-      wishlist = data;
-      _controller.forward(); // Animate once after data loads
-    });
+    try {
+      final data = await WishlistService.fetchWishlist();
+      setState(() {
+        wishlist = data;
+        _controller.forward(); // Animate once after data loads
+      });
+    } catch (e) {
+      // Handle error if needed
+      print('Error loading wishlist: $e');
+    }
   }
 
   @override
@@ -62,6 +89,7 @@ class _WishlistScreenState extends State<WishlistScreen>
         elevation: 0,
         title: const Text('My Wishlist'),
         backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
           Center(
@@ -91,6 +119,17 @@ class _WishlistScreenState extends State<WishlistScreen>
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else {
+            // Check if user is not logged in
+            if (!_isLoggedIn) {
+              return WithoutLoginScreen(
+                icon: Icons.favorite_border_outlined,
+                title: 'Wishlist',
+                subText:
+                    'Login to add products to your wishlist and manage your orders',
+              );
+            }
+
+            // User is logged in, show wishlist content
             return wishlist.isEmpty
                 ? Center(
                     child: Column(
@@ -134,10 +173,9 @@ class _WishlistScreenState extends State<WishlistScreen>
                     itemBuilder: (context, index) {
                       final item = wishlist[index];
                       final product = item['productId'];
-                      final wishlistId = item['_id']; // <-- used to remove
 
-                      final title = product['name'];
-                      final rating = product['rating'];
+                      final title = product['name'] ?? 'Unknown Product';
+                      final rating = product['rating'] ?? 0.0;
                       final image = (product['images'] != null &&
                               product['images'].isNotEmpty)
                           ? product['images'][0]
@@ -149,7 +187,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                           : null;
 
                       final priceValue =
-                          priceObj != null ? priceObj['actualPrice'] : null;
+                          priceObj != null ? priceObj['actualPrice'] : 0.0;
 
                       final animation = Tween<double>(begin: 0.0, end: 1.0)
                           .animate(CurvedAnimation(
@@ -199,6 +237,13 @@ class _WishlistScreenState extends State<WishlistScreen>
                                             )
                                           : null,
                                     ),
+                                    child: image == null
+                                        ? Icon(
+                                            Icons.image_not_supported,
+                                            color: Colors.grey[400],
+                                            size: 40,
+                                          )
+                                        : null,
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
@@ -262,9 +307,11 @@ class _WishlistScreenState extends State<WishlistScreen>
                                                         }
                                                       } catch (e) {
                                                         if (mounted) {
-                                                          _removingProductIds
-                                                              .remove(
-                                                                  id); // stop the spinner only
+                                                          setState(() {
+                                                            _removingProductIds
+                                                                .remove(
+                                                                    id); // stop the spinner only
+                                                          });
                                                           showErrorSnackbar(
                                                               context, '$e');
                                                         }
@@ -277,7 +324,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          '₹$priceValue',
+                                          '₹${priceValue.toStringAsFixed(2)}',
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
@@ -301,7 +348,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                                             ),
                                             const SizedBox(width: 4),
                                             Text(
-                                              '$rating',
+                                              rating.toStringAsFixed(1),
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 color: Colors.grey[600],
@@ -323,7 +370,7 @@ class _WishlistScreenState extends State<WishlistScreen>
           }
         },
       ),
-      floatingActionButton: wishlist.isNotEmpty
+      floatingActionButton: _isLoggedIn && wishlist.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _isAddingAllToCart
                   ? null
@@ -344,30 +391,37 @@ class _WishlistScreenState extends State<WishlistScreen>
                           final productId = product['_id'];
                           final priceId = priceObj['_id'];
 
-                          final result = await CartService.addToCart(
-                            productId: productId,
-                            priceId: priceId,
-                            quantity: 1,
-                          );
+                          try {
+                            final result = await CartService.addToCart(
+                              productId: productId,
+                              priceId: priceId,
+                              quantity: 1,
+                            );
 
-                          final success = result['success'] as bool;
-                          if (!success) {
+                            final success = result['success'] as bool;
+                            if (!success) {
+                              allSuccess = false;
+                              anyFailure = true;
+                            }
+                          } catch (e) {
                             allSuccess = false;
                             anyFailure = true;
                           }
                         }
                       }
 
-                      setState(() {
-                        _isAddingAllToCart = false;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _isAddingAllToCart = false;
+                        });
 
-                      if (allSuccess) {
-                        showSuccessSnackbar(
-                            context, 'All items added to cart successfully');
-                      } else if (anyFailure) {
-                        showSuccessSnackbar(context,
-                            'Some items could not be added (maybe already in cart)');
+                        if (allSuccess) {
+                          showSuccessSnackbar(
+                              context, 'All items added to cart successfully');
+                        } else if (anyFailure) {
+                          showSuccessSnackbar(context,
+                              'Some items could not be added (maybe already in cart)');
+                        }
                       }
                     },
               backgroundColor:

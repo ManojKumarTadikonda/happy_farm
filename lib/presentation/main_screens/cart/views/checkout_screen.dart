@@ -178,7 +178,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         context, "Error", 'Payment failed:Please try again later');
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => CartScreen(userId: userId ?? '' ,)),
+      MaterialPageRoute(builder: (context) => CartScreen()),
     );    
     _loadUserData();
     _fetchUserAddresses();

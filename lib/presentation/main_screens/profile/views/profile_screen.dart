@@ -8,6 +8,7 @@ import 'package:happy_farm/presentation/main_screens/profile/views/update_passwo
 import 'package:happy_farm/presentation/main_screens/profile/widgets/custom_dialog.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
+import 'package:happy_farm/widgets/without_login_screen.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
@@ -27,10 +28,32 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isImageLoading = false;
+  bool _isLoggedIn = false;
+  bool _isCheckingLogin = true;
+  late Future<void> _initFuture;
 
   @override
   void initState() {
     super.initState();
+    _initFuture = _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final userId = prefs.getString('userId');
+
+      setState(() {
+        _isLoggedIn = token != null && userId != null;
+        _isCheckingLogin = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoggedIn = false;
+        _isCheckingLogin = false;
+      });
+    }
   }
 
   Future<void> _pickCropAndUploadImage({
@@ -628,22 +651,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          final user = userProvider.user;
+      body: FutureBuilder<void>(
+        future: _initFuture,
+        builder: (context, snapshot) {
+          if (_isCheckingLogin) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildProfileHeader(
-                  user.username ?? "Unknown",
-                  user.email ?? "Unknown",
-                  user.image ?? "",
+          if (!_isLoggedIn) {
+            return WithoutLoginScreen(
+              icon: Icons.person_outline,
+              title: 'My Profile',
+              subText: 'Login to view and manage your profile settings',
+            );
+          }
+
+          return Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              final user = userProvider.user;
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildProfileHeader(
+                      user.username ?? "Unknown",
+                      user.email ?? "Unknown",
+                      user.image ?? "",
+                    ),
+                    const SizedBox(height: 40),
+                    _buildOptions(context),
+                  ],
                 ),
-                const SizedBox(height: 40),
-                _buildOptions(context),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

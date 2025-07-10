@@ -6,12 +6,13 @@ import 'package:happy_farm/presentation/main_screens/cart/services/cart_service.
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/utils/app_theme.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
+import 'package:happy_farm/widgets/without_login_screen.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CartScreen extends StatefulWidget {
-  final String userId;
 
-  const CartScreen({super.key, required this.userId});
+  const CartScreen({super.key,});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -20,29 +21,47 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   late List<CartItem> _cartItems = [];
   bool _isLoading = true;
-  bool _isDeleting = false;
+  bool _isLoggedIn = false;
   Set<String> _updatingItemIds = {};
   Set<String> _deletingItemIds = {};
   Set<String> _updatingAdd = {};
   Set<String> _updatingRemove = {};
-  List<CartItem> cartItems = [];
+
   @override
   void initState() {
-    _fetchCart();
     super.initState();
-    // Simulate loading for 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    _checkLoginAndFetchCart();
+  }
+
+  Future<void> _checkLoginAndFetchCart() async {
+    // Check if user is logged in
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final userId = prefs.getString('userId');
+
+    setState(() {
+      _isLoggedIn = token != null && userId != null;
+    });
+
+    if (_isLoggedIn) {
+      _fetchCart();
+    } else {
+      // If not logged in, just stop loading
       setState(() {
         _isLoading = false;
       });
-      _isLoading = false;
-    });
+    }
   }
 
   void _fetchCart() {
     CartService.fetchCart().then((items) {
       setState(() {
         _cartItems = items;
+        _isLoading = false;
+      });
+    }).catchError((error) {
+      setState(() {
+        _isLoading = false;
       });
     });
   }
@@ -52,7 +71,6 @@ class _CartScreenState extends State<CartScreen> {
     int? newQuantity,
     String? newPriceId,
   }) async {
-    // mark this item as "updating"
     setState(() => _updatingItemIds.add(cartItemId));
 
     try {
@@ -62,36 +80,18 @@ class _CartScreenState extends State<CartScreen> {
         priceId: newPriceId,
       );
 
-      // replace the old item with the updated one
-      final index = cartItems.indexWhere((e) => e.id == cartItemId);
+      final index = _cartItems.indexWhere((e) => e.id == cartItemId);
       if (index != -1) {
-        setState(() => cartItems[index] = updated);
-      } showSuccessSnackbar(context, "Cart Updated");
+        setState(() => _cartItems[index] = updated);
+      }
+      showSuccessSnackbar(context, "Cart Updated");
     } catch (e) {
-       showErrorSnackbar(context, '$e');
+      showErrorSnackbar(context, '$e');
     } finally {
       if (mounted) {
         setState(() => _updatingItemIds.remove(cartItemId));
       }
     }
-  }
-
-  void _showLimitDialog(BuildContext context, String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text("OK"),
-            )
-          ],
-        );
-      },
-    );
   }
 
   int _calculateTotal() {
@@ -124,44 +124,50 @@ class _CartScreenState extends State<CartScreen> {
       ),
       body: _isLoading
           ? Center(child: Lottie.asset('assets/lottie/cartloading.json'))
-          : _cartItems.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Lottie.asset('assets/lottie/emptyCart.json'),
-                      SizedBox(
-                          height: 16), // spacing between animation and text
-                      Text(
-                        'Your cart is empty!',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(12),
+          : !_isLoggedIn
+              ? WithoutLoginScreen(
+                title: 'cart',
+                subText: 'Login to add products to your cart and mange your orders',
+                icon: Icons.shopping_cart_outlined,
+              )
+              : _cartItems.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          ..._cartItems
-                              .map((item) => _buildCartItem(item))
-                              .toList(),
-                          const SizedBox(height: 16),
-                          _buildPaymentDetails(
-                              _cartItems.length, _calculateTotal()),
-                          const SizedBox(height: 16),
+                          Lottie.asset('assets/lottie/emptyCart.json'),
+                          SizedBox(
+                              height: 16), // spacing between animation and text
+                          Text(
+                            'Your cart is empty!',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
                         ],
                       ),
+                    )
+                  : Column(
+                      children: [
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.all(12),
+                            children: [
+                              ..._cartItems
+                                  .map((item) => _buildCartItem(item))
+                                  .toList(),
+                              const SizedBox(height: 16),
+                              _buildPaymentDetails(
+                                  _cartItems.length, _calculateTotal()),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                        ),
+                        _buildBottomBar(_calculateTotal()),
+                      ],
                     ),
-                    _buildBottomBar(_calculateTotal()),
-                  ],
-                ),
     );
   }
 
@@ -244,7 +250,7 @@ class _CartScreenState extends State<CartScreen> {
                                   await CartService.deleteCartItem(item.id);
 
                               if (mounted) {
-                                showSuccessSnackbar(context,msg);
+                                showSuccessSnackbar(context, msg);
                                 _fetchCart(); // Optionally reload cart
                               }
                             } catch (e) {
@@ -293,7 +299,7 @@ class _CartScreenState extends State<CartScreen> {
                                     _cartItems[itemIndex] = updatedItem;
                                   });
                                 } catch (e) {
-                                   showErrorSnackbar(context, '$e');
+                                  showErrorSnackbar(context, '$e');
                                 } finally {
                                   if (mounted) {
                                     setState(

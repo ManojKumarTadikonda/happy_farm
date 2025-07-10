@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/presentation/auth/views/welcome_screen.dart';
 import 'dart:async';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
-import 'package:happy_farm/presentation/auth/views/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/auth/services/user_service.dart';
@@ -39,37 +39,55 @@ class _SplashScreenState extends State<SplashScreen>
 
     _scaleController.forward();
 
-    Future.delayed(const Duration(seconds: 5), () async {
-      await _navigateBasedOnLogin();
+    Future.delayed(const Duration(seconds: 3), () async {
+      await _navigateToMainScreen();
     });
   }
 
-  Future<void> _navigateBasedOnLogin() async {
+  Future<void> _navigateToMainScreen() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final userId = prefs.getString('userId');
+    final isOpened = prefs.getBool('isopened') ?? false;
 
-    if (userId != null) {
-      final userData = await UserService().fetchUserDetails(userId);
-      if (userData != null) {
-        Provider.of<UserProvider>(context, listen: false).setUser(
-          username: userData['name'] ?? 'No Name',
-          email: userData['email'] ?? 'No Email',
-          phoneNumber: userData['phone'] ?? 'No Phone',
-          image: userData['image'] ?? "",
+    if (isOpened) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen(selectedIndex: 0,)),
         );
       }
+      return;
     }
 
     if (token != null && userId != null) {
+      try {
+        final userData = await UserService().fetchUserDetails(userId);
+        if (userData != null && mounted) {
+          Provider.of<UserProvider>(context, listen: false).setUser(
+            username: userData['name'] ?? 'No Name',
+            email: userData['email'] ?? 'No Email',
+            phoneNumber: userData['phone'] ?? 'No Phone',
+            image: userData['image'] ?? "",
+          );
+        }
+      } catch (e) {
+        debugPrint('Error fetching user data: $e');
+      }
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen(selectedIndex: 0,)),
+        );
+      }
+      return;
+    }
+
+    // If not logged in and not opened, go to WelcomeScreen
+    if (mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => WelcomeScreen()),
       );
     }
   }
@@ -157,6 +175,35 @@ class _SplashScreenState extends State<SplashScreen>
                       color: Colors.white, // masked by gradient
                       letterSpacing: 0.8,
                     ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                // Loading indicator
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.teal.shade600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "Loading...",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.teal.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

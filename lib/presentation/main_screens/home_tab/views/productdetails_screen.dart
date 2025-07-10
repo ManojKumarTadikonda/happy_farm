@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/presentation/auth/views/login_screen.dart';
 import 'package:happy_farm/presentation/main_screens/home_tab/models/product_model.dart';
 import 'package:happy_farm/models/user_provider.dart';
 import 'package:happy_farm/presentation/main_screens/cart/views/cart_screen.dart';
@@ -8,6 +9,7 @@ import 'package:happy_farm/presentation/main_screens/home_tab/services/review_se
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/presentation/main_screens/wishlist/services/whislist_service.dart';
 import 'package:happy_farm/utils/app_theme.dart';
+import 'package:happy_farm/widgets/custom_dialog.dart';
 import 'package:happy_farm/widgets/custom_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -287,7 +289,7 @@ class _ProductDetailsState extends State<ProductDetails> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CartScreen(userId: userId!),
+                  builder: (context) => CartScreen(),
                 ),
               );
             },
@@ -372,7 +374,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                               fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
-                        _buildQuantityAndCartSection(userId!, price),
+                        _buildQuantityAndCartSection(price),
                         const SizedBox(height: 24),
                         _buildInfoCards(),
                         const SizedBox(height: 20),
@@ -422,7 +424,22 @@ class _ProductDetailsState extends State<ProductDetails> {
           right: 16,
           child: GestureDetector(
             onTap: () {
-              if (!isLoadingWish) {
+              if (userId == null) {
+                showCustomDialog(
+                  context: context,
+                  title: 'Login Required',
+                  message: 'Please Login to continue',
+                  leftButtonText: 'Cancel',
+                  rightButtonText: 'Login',
+                  icon: Icons.warning,
+                  primaryColor: AppTheme.primaryColor,
+                  onLeftButtonPressed: () => Navigator.pop(context),
+                  onRightButtonPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+                  },
+                );
+              } else if (!isLoadingWish) {
                 isWish ? removeWishlist() : addWishList();
               }
             },
@@ -529,7 +546,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     );
   }
 
-  Widget _buildQuantityAndCartSection(String userId, dynamic price) {
+  Widget _buildQuantityAndCartSection(dynamic price) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -572,13 +589,30 @@ class _ProductDetailsState extends State<ProductDetails> {
           onPressed: price.countInStock == 0 || isLoadingCart
               ? null
               : () {
-                  isCart
-                      ? Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (builder) => CartScreen(userId: userId),
-                          ),
-                        )
-                      : addToCart();
+                  if (userId == null) {
+                    showCustomDialog(
+                      context: context,
+                      title: 'Login Required',
+                      message: 'Please Login to continue',
+                      leftButtonText: 'Cancel',
+                      rightButtonText: 'Login',
+                      icon: Icons.warning,
+                      primaryColor: AppTheme.primaryColor,
+                      onLeftButtonPressed: () => Navigator.pop(context),
+                      onRightButtonPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+                      },
+                    );
+                  } else {
+                    isCart
+                        ? Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (builder) => CartScreen(),
+                            ),
+                          )
+                        : addToCart();
+                  }
                 },
           icon: isLoadingCart
               ? const SizedBox(
@@ -591,13 +625,13 @@ class _ProductDetailsState extends State<ProductDetails> {
                 )
               : const Icon(Icons.shopping_cart, color: Colors.white),
           label: Text(
-            price.countInStock > 0 ?
-            isCart
-                ? "Go to Cart"
-                : isLoadingCart
-                    ? "Adding..."
-                    : "Add To Cart"
-            :'Out of Stock',
+            price.countInStock > 0
+                ? isCart
+                    ? "Go to Cart"
+                    : isLoadingCart
+                        ? "Adding..."
+                        : "Add To Cart"
+                : 'Out of Stock',
             style: const TextStyle(color: Colors.white),
           ),
           style: ElevatedButton.styleFrom(
@@ -705,7 +739,26 @@ class _ProductDetailsState extends State<ProductDetails> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             GestureDetector(
-              onTap: _showWriteReviewModal,
+              onTap: () {
+               if (userId == null) {
+                    showCustomDialog(
+                      context: context,
+                      title: 'Login Required',
+                      message: 'Please Login to continue',
+                      leftButtonText: 'Cancel',
+                      rightButtonText: 'Login',
+                      icon: Icons.warning,
+                      primaryColor: AppTheme.primaryColor,
+                      onLeftButtonPressed: () => Navigator.pop(context),
+                      onRightButtonPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+                      },
+                    );}
+              else{
+                _showWriteReviewModal();
+              }
+              },
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

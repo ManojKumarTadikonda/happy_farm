@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happy_farm/presentation/auth/views/welcome_screen.dart';
 import 'package:happy_farm/presentation/auth/widgets/custom_snackba_msg.dart';
 import 'package:happy_farm/presentation/main_screens/main_screen.dart';
 import 'package:happy_farm/models/user_provider.dart';
@@ -204,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => const SignUpScreen()));
+                                  builder: (_) => const WelcomeScreen()));
                         },
                         child: const Text(
                           'Sign Up',
